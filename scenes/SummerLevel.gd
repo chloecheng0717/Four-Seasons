@@ -81,7 +81,10 @@ const PLAYER_SPAWNS := [
 const WATER_ROWS := [3, 4, 5, 6]
 const WATER_Z := -10
 
-# Positions based on Summer layout.png
+# Positions based on Summer layout.png, then measured in the built level: every
+# piece of rubbish is where the picture puts it on the sand shelves, and every one
+# of them was checked by actually jumping for it from the shelf below (see
+# _summer_test's reachability checks).
 const TRASH_ITEMS := [
 	{
 		"kind": &"paper",
@@ -97,7 +100,7 @@ const TRASH_ITEMS := [
 		"region": Rect2(24, 16, 184, 232),
 		"display_height": 56.0,
 		"pickup_size": 48.0,
-		"position": Vector2(634, 65),
+		"position": Vector2(752, 200),
 	},
 	{
 		"kind": &"glass",
@@ -109,26 +112,33 @@ const TRASH_ITEMS := [
 	},
 ]
 
-# The three bins positioned according to Summer layout.png
-# NOTE: the glass bin's file on disk is "Glass bin.png", with a lower case b.
+# The three bins, all standing on the flat ground at its surface, y=560.
+#
+# They cannot be spread anywhere across the beach, because the ground is already
+# taken: the two dogs start at x=120 and x=232 and their pictures reach to x=264,
+# and the lowest sand shelf sits over x=320..512, which is exactly the band a bin
+# standing on the ground would be drawn into. That leaves the beach from x=560
+# rightwards, so the bins are spaced along it, each with its rubbish above and
+# slightly to the left of it, and each nearest to its own rubbish by a clear
+# margin. The glass bin's file on disk is "Glass bin.png", with a lower case b.
 const BINS := [
 	{
 		"kind": &"paper",
 		"texture": preload("res://assets/Summer/Paper Bin.png"),
 		"region": Rect2(40, 40, 160, 192),
-		"position": Vector2(58, 551),
+		"position": Vector2(560, 560),
 	},
 	{
 		"kind": &"plastic",
 		"texture": preload("res://assets/Summer/Plastic Bin.png"),
 		"region": Rect2(48, 32, 160, 192),
-		"position": Vector2(630, 540),
+		"position": Vector2(860, 560),
 	},
 	{
 		"kind": &"glass",
 		"texture": preload("res://assets/Summer/Glass bin.png"),
 		"region": Rect2(48, 32, 160, 192),
-		"position": Vector2(1169, 582),
+		"position": Vector2(1120, 560),
 	},
 ]
 

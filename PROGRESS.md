@@ -364,23 +364,26 @@ level, drive it with simulated input, and assert on the results.
   Summer level, which detects the `--next-level-check` user argument, prints
   `NEXT LEVEL REACHED SUMMER` and exits 0 — so the round trip leaves Spring and
   lands in Summer. The test never presses unless every prior check passed.
-- `_summer_test.gd` (`_summer_test.tscn`) — **129 checks, ALL PASSING.** Builds
+- `_summer_test.gd` (`_summer_test.tscn`) — **152 checks, ALL PASSING.** Builds
   the real Summer scene and drives it. Proves Summer is built and is not Spring;
   two dogs cropped to the dog art with Spring's controls untouched; sand on all
   69 tiles; the sea is sprites only, nothing solid in it, drawn behind the level;
-  three bins with three different pictures, spaced ~310px apart, on the flat
-  ground, none overlapping or touching; three pieces of rubbish, each nearest its
-  own bin; the completion banner and button hidden and inert at the start; both
-  dogs walk, jump, face correctly and stack on their own keys, and can stack
-  while carrying. **All six wrong-bin pairs** show `Wrong bin!`, keep the item in
-  the dog's hands, consume nothing, fill no bin, and do not finish the level —
-  and the notice clears itself once the dog has left. Each right bin sorts for
-  good, the rubbish cannot be picked up again at its old spot, and the completion
-  screen only arrives after the third sort. The Next Level button is deliberately
-  **not pressed** (that would free the test), so its target is read from the
-  level's `NEXT_SCENE` constant instead.
+  three bins with three different pictures, spaced 260-300px apart, standing on the
+  ground with their artwork's bottom edge on it and centred over their own node,
+  and none of them drawn into a wall or on top of a dog; three pieces of rubbish,
+  each nearest its own bin; the completion banner and button hidden and inert at
+  the start; both dogs walk, jump, face correctly and stack on their own keys, and
+  can stack while carrying. **Every piece of rubbish is jumped for for real** from
+  the sand shelf below it, once with one dog and once with the two dogs stacked.
+  **All six wrong-bin pairs** show `Wrong bin!`, keep the item in the dog's hands,
+  consume nothing, fill no bin, and do not finish the level — and the notice clears
+  itself once the dog has left. Each right bin sorts for good, the rubbish cannot
+  be picked up again at its old spot, and the completion screen only arrives after
+  the third sort. The Next Level button is deliberately **not pressed** (that would
+  free the test), so its target is read from the level's `NEXT_SCENE` constant
+  instead.
 
-**389 checks total, 0 failures, across five suites.** (The 67/42 figures in
+**412 checks total, 0 failures, across five suites.** (The 67/42 figures in
 earlier versions of this file were off by one each: they counted the
 `ALL CHECKS PASSED` summary line as a check. The real counts were always 66 and
 41. The garden suite went from 81 to 102 when the permanent-consumption rules
@@ -389,7 +392,8 @@ from a label to a picture on 2026-09-28, from 116 to 125 when the pause before
 the banner was added later the same day, from 125 to 132 when the Next Level
 button was added, and from 132 to 133 when the button-position guard was added.
 `_next_level_test` was added with the button, and `_summer_test` (129) with
-Summer on 2026-09-30.)
+Summer on 2026-09-30, later 152 on 2026-10-01 when the bin-anchoring,
+wall-clearance and rubbish-reachability checks were added.)
 
 How to run them (headless, no editor needed):
 
@@ -458,12 +462,25 @@ Everything in Summer is declared in `SummerLevel.gd` (`TRASH_ITEMS`, `BINS`,
 
 | Thing | Position | Notes |
 |---|---|---|
-| Paper | `(440, 532)` | Flat ground, between the paper and plastic bins. The easy one. |
-| Plastic bag | `(860, 532)` | Flat ground, between the plastic and glass bins. |
-| Glass bottle | `(980, 420)` | On the row 4 platform — needs a jump, or one dog on the other's head. |
-| Paper bin | `(320, 560)` | Flat ground, left. |
-| Plastic bin | `(720, 560)` | Flat ground, centre. |
-| Glass bin | `(1140, 560)` | Flat ground, right. |
+| Paper | `(434, 322)` | Floating above the row 8 platform (surface y=448), the way the picture puts it. Jump for it from that platform. |
+| Plastic bag | `(752, 200)` | Floating above the row 6 platform (surface y=336), above the right-hand end of it. Jump for it from that platform. |
+| Glass bottle | `(1136, 230)` | Level with the right-hand end of the row 4 platform (surface y=224). Jump for it from that platform. |
+| Paper bin | `(560, 560)` | Flat ground, left of the bins. |
+| Plastic bin | `(860, 560)` | Flat ground, centre. |
+| Glass bin | `(1120, 560)` | Flat ground, right. |
+
+**Why the bins cannot sit anywhere else on the ground.** The beach floor is
+already spoken for, and all three of these were measured in the built level, not
+guessed: the two dogs start at x=120 and x=232 and their pictures reach to
+x=264, and the lowest sand platform covers x=320..512, which is precisely the band
+a bin standing on the ground would be drawn into (bin art is 112 tall, so its top
+lands at y=448, inside that platform's 448..504). The left wall takes x=0..16. So
+the ground a bin can actually stand on starts at x≈560, and the bins are spaced
+along it from there. Each bin is the nearest bin to its own rubbish by a clear
+margin (paper 126px, plastic 108px, glass 16px in x), and every piece of rubbish is
+checkable by actually jumping for it — `_summer_test` §3 stands a dog on the shelf
+below each piece and confirms the pickup happens, once with one dog and once with
+the two stacked.
 
 **The sea is scenery, not a hazard.** `Water.png` is drawn as plain `Sprite2D`s
 in a `Water` node at `z_index = -10`, behind everything, with **no collider**. It
@@ -471,11 +488,21 @@ cannot be stood on, walked into or picked up, and `_summer_test` §1 asserts
 exactly that (80 sprites, no `CollisionShape2D` anywhere under it, none at a
 non-negative `z_index`).
 
+**The bins stand on the ground, they do not hover over it.** `TrashBin.gd` lifts
+the centred sprite by half its own height (`offset = (0, -region.height * 0.5)`,
+the same anchor `Player.gd` uses for the dogs), so the artwork's bottom edge lands
+exactly on the node and its middle sits over the node. With every bin at y=560 the
+art really is drawn from y=448 to y=560 — measured against a real render, and
+asserted in `_summer_test` §1 from `TrashBin.drawn_rect()`, which reads the sprite's
+own transform. Before this was fixed the artwork hung a whole `display_height`
+above the ground and a half-width to the left of its node, which is what had the
+paper bin's picture overlapping the left wall.
+
 **The bins are far enough apart that nothing sorts by accident.** Their pickup
-boxes are 90x110 and sit ~310px apart (paper 275..365, plastic 675..765, glass
-1095..1185 on the x axis). `_summer_test` §1 measures the real colliders and
-asserts they neither overlap nor touch even with 24px of slack, and that no dog
-can be in two at once.
+boxes are 90x110 and sit 210px and 170px apart (paper 515..605, plastic 815..905,
+glass 1075..1165 on the x axis). `_summer_test` §1 measures the real colliders and
+asserts they neither overlap nor touch even with 24px of slack, that no dog can be
+in two at once, and that no bin is drawn into a wall or on top of a dog.
 
 **The rule, in full** (`TrashBin.gd`, four branches):
 - a dog with empty hands is ignored, so standing next to a bin is never a problem;
@@ -637,7 +664,7 @@ these exist yet.
 | `_stack_jump_test.gd` | Automated regression suite (41 checks) for the original stacking/jump behaviour, separation, and re-stacking. |
 | `_garden_test.gd` | Automated regression suite (133 checks) for the Spring gardening mechanic, including used-up items being gone for good, the water needing both cats, carrying while stacked, the completion banner being the `Level Complete` picture rather than the old label, the `NextLevel` button sharing the completion screen (real `TextureButton`, right picture, **hidden and inert before the finish**, centre on screen, above the banner, unmoved by the reveal), and the pause between the flower appearing and the banner turning up. |
 | `_next_level_test.gd` | Automated end-to-end suite (20 checks) for the season transition: a real Spring run to the flower, the completion pause, the banner and Next Level button appearing together, the button's `pressed` being wired to the level's handler, and then pressing it — the scene change frees the test and the built Summer level proves the arrival by printing `NEXT LEVEL REACHED SUMMER` and quitting 0. Never presses the button if any earlier check failed. |
-| `_summer_test.gd` | Automated regression suite (**129 checks**) for Summer: the scene really is built and is not Spring, two dogs cropped to the dog art, the controls unchanged, sand on every tile, the sea is decoration only and drawn behind the level, three bins with three different pictures that do not touch, three pieces of rubbish each nearest its own bin, the completion screen and button hidden and inert at the start, dogs move/jump/face/stack on their own keys and can stack while carrying, **all six wrong-bin pairs are refused with a notice that clears itself**, each right bin sorts for good and the rubbish cannot be picked up again, and the completion screen only arrives after the third sort. The Next Level button is never pressed — pressing it would free the test — so its target is read from `NEXT_SCENE` instead. |
+| `_summer_test.gd` | Automated regression suite (**152 checks**) for Summer: the scene really is built and is not Spring, two dogs cropped to the dog art, the controls unchanged, sand on every tile, the sea is decoration only and drawn behind the level, three bins with three different pictures that do not touch, each standing on the ground with its artwork's bottom edge on the ground and centred over its own node, none drawn into a wall or on top of a dog, three pieces of rubbish each nearest its own bin, the completion screen and button hidden and inert at the start, dogs move/jump/face/stack on their own keys and can stack while carrying, **every piece of rubbish is really picked up by jumping for it from the shelf below it, solo and stacked**, **all six wrong-bin pairs are refused with a notice that clears itself**, each right bin sorts for good and the rubbish cannot be picked up again, and the completion screen only arrives after the third sort. The Next Level button is never pressed — pressing it would free the test — so its target is read from `NEXT_SCENE` instead. |
 | `_diag.gd` | Leftover one-off trace script used to debug the stacking bug. Prints a per-frame table and quits. Not part of the game. |
 
 ---
@@ -856,9 +883,10 @@ test rather than going unnoticed.
   `_summer_test` are test harnesses sitting in the project root. They are useful
   and passing — keep them, but do not let them be mistaken for game code.
 - `assets/Cat.png` is unused.
-- The project is not under version control. Consider `git init` so changes are
-  recoverable. This matters more now than it did: the gardening mechanic was
-  added with no way to roll it back.
+- ~~The project is not under version control.~~ **Fixed 2026-10-01:** `git init`
+  was run, a Godot `.gitignore` was added, and the working project was committed
+  before the Summer fixes were started, so every change since is recoverable.
+  Throwaway `/_probe_*` measurement scripts are ignored as well as deleted.
 
 ### How to move a picture after this session
 
@@ -965,12 +993,14 @@ These cost real time during the fix and will mislead anyone testing again:
   `Dictionary` and assigning it to a typed variable raises `Trying to assign
   invalid previously freed instance` — check `is_instance_valid()` on a `Variant`
   *before* the typed assignment, not after.
-- **Bins sort on contact, so a test can sort rubbish by accident.** Building a
-  stack at x = 400 put a dog inside the paper bin's box (x 275..365) and the
-  paper was correctly consumed mid-test, cascading into 13 bogus failures. Any
-  spot a test parks a dog in must be clear of every bin box *and* every rubbish
-  spawn. `_summer_test.gd` has `PARK_A`, `PARK_B` and `STACK_X` constants
-  chosen for exactly that reason, all at x <= 240.
+- **Bins sort on contact, so a test can sort rubbish by accident.** Parking a dog
+  in a bin's box means it gets served: `PARK_B` used to sit at x = 620, inside the
+  plastic bin's box, which cascaded into 13 bogus failures before anything else in
+  the suite was true. Any spot a test parks a dog in must be clear of every bin
+  box *and* every rubbish spawn, and that has to be re-checked whenever a bin
+  moves. `_summer_test.gd` has `PARK_A` (150), `PARK_B` (750) and `STACK_X` (150)
+  constants chosen for exactly that reason, with the bins at x = 560, 860 and
+  1120 reaching 45px either side of those points.
 
 ---
 
@@ -998,7 +1028,7 @@ Autumn and Winter were explicitly out of scope.
 
 **NEXT TASK: play both seasons manually in the Godot editor.**
 
-Everything automated is green — **389 checks across five suites** — but all of it
+Everything automated is green — **412 checks across five suites** — but all of it
 is headless with simulated input. A human has still not played either loop by
 hand, so that is the first thing to do:
 
@@ -1691,3 +1721,71 @@ history.
 - Spring and Summer both function correctly with the existing shared systems.
 
 **Next task:** Manual play in the Godot editor to verify the Summer layout, controls, sorting, and transitions behave correctly in practice.
+
+
+### 2026-10-01 - Summer bins stand on the ground, and every piece of rubbish is reachable
+
+**What was done:**
+
+- Git initialised (`.gitignore` set up for Godot: `.godot/`, `/android/`, build
+  folders, throwaway `/_probe_*` measurement scripts, OS clutter) and the working
+  project committed as it stood *before* any of these changes, then committed again
+  with them.
+- **`TrashBin.gd` sprite anchoring fixed.** The sprite is centred, so
+  `offset = (-region.width * 0.5, -region.height)` put the artwork a whole
+  `display_height` above the ground and a half-width to the left of its node.
+  Measured against a real render: a bin at `(640, 560)` was drawing
+  `y 392..504` and `x 546.7..640` — i.e. hovering 56px above the ground with its
+  right edge on the node. It now uses `(0, -region.height * 0.5)`, the same anchor
+  `Player.gd` uses for the dogs, so the bottom edge lands on the node and the
+  middle sits over it. This is what had the paper bin's picture overlapping the
+  left wall.
+- **`TrashBin.drawn_rect()` fixed.** It used `global_position + sprite.offset`
+  with `region.size * scale`, which ignored the sprite's centred rect and its
+  parent transform entirely. It now reads `sprite.get_rect()` through
+  `sprite.global_transform`, which matches the rendered pixels exactly.
+- **`TrashBin._process()` no longer stops at the first dog.** It returned after
+  serving one overlapping player, so if the lower dog was holding something this
+  bin refuses while the upper dog was holding exactly what it wants, the
+  delivery was missed. Every dog in the bin is now served.
+- **Bins moved onto the ground, at y=560:** paper `(560, 560)`, plastic
+  `(860, 560)`, glass `(1120, 560)`. They were at `(58, 551)`, `(630, 540)` and
+  `(1169, 582)` — the first overlapped the left wall with both its art and its
+  collider, and none of the three sat on the ground.
+- **Plastic bag moved from `(634, 65)` to `(752, 200)`.** At y=65 it was up in
+  the top-left corner of the sky: a scan of every standable surface found exactly
+  **one** spot in the whole level from which a dog could reach it (x=848 on the
+  top platform, jumping left), and two with the dogs stacked. A piece of rubbish
+  one jump away from being unreachable leaves the level unfinishable. It is now
+  above the right-hand end of the row 6 platform, reachable from **13** spots solo
+  and **19** stacked.
+- **Rubbish reachability is now a test.** New `_summer_test` §3 stands a dog on
+  the sand shelf below each piece of rubbish, jumps, and only passes if the
+  pickup really happens — once with one dog and once with the two dogs stacked
+  (six checks), then confirms all three pieces are still in the level afterwards.
+- **Bin checks tightened.** The old check asserted `offset.y == -region.height`,
+  which is the bug itself. It is now the real invariant: the artwork's bottom
+  edge is on the node's y, its middle is over the node's x, and no bin's artwork
+  or collider touches a wall or is drawn on top of a dog.
+- `PARK_B` moved from `(620, 560)` to `(750, 560)`. At 620 it was standing inside
+  the plastic bin's pickup box, which was the source of most of the 23 failures
+  this suite was reporting: the dog was being served by a bin it was only parked
+  next to, and the glass-to-plastic refusal case was testing the wrong bin.
+- Stale positions and totals corrected in §2.2 and §7 (they still described a
+  layout from before Summer was first built).
+
+**Measured, not assumed:** every position, box and gap above came out of a
+throwaway probe that instantiated the real `SummerLevel.tscn`, read the real
+`CollisionShape2D`s and sprite transforms, and for the two art questions rendered
+a bin with a real renderer and measured the painted pixels. The probe scripts are
+deleted and `.gitignore`d.
+
+**Testing.** All five suites pass with 0 failures — Summer **152** (was 129),
+Stack Walk 66, Stack Jump 41, Garden 133, Next Level 20 — **412 checks total**.
+
+**Still open:** the bins cannot go near the left wall even though the picture puts
+the paper bin there, because the two dogs start on the beach floor at x=120 and
+x=232 (art out to x=264) and the lowest sand platform covers x=320..512, which is
+exactly the band a ground-standing bin would be drawn into. The ground a bin can
+use starts at x≈560. If the dogs' spawns or the platforms move, the bins can move
+left again.

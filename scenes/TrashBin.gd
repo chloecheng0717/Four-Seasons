@@ -46,8 +46,12 @@ func _ready() -> void:
 	sprite.region_rect = art_region
 	var uniform_scale: float = display_height / art_region.size.y
 	sprite.scale = Vector2(uniform_scale, uniform_scale)
-	# Drawn from the bottom edge, so the bin stands on the ground it is placed on.
-	sprite.offset = Vector2(-art_region.size.x * 0.5, -art_region.size.y)
+	# Drawn so the artwork's bottom edge lands exactly on the node origin and its
+	# middle sits over it, which is how Player.gd anchors the dogs. The sprite is
+	# centred, so the offset only has to lift it by half its height: offsetting by
+	# the full height would float the bin a whole display_height above the ground,
+	# and offsetting sideways as well would slide it off to the left of its node.
+	sprite.offset = Vector2(0.0, -art_region.size.y * 0.5)
 	
 	# Set bin label based on accepted kind
 	match accepts_kind:
@@ -64,11 +68,15 @@ func _ready() -> void:
 ## Watched every frame rather than on body_entered, for the same reason the pot
 ## does it: a dog already carrying the right thing can walk straight in and be
 ## served, and a dog standing still in here is still offered the chance.
+##
+## Every dog in here is served, not just the first one: two dogs can stand in the
+## same bin, and if the lower one is holding something this bin does not want
+## while the upper one is holding exactly what it does want, stopping at the first
+## dog would refuse the rubbish that was actually being delivered.
 func _process(_delta: float) -> void:
 	for body in get_overlapping_bodies():
 		if body is Player:
 			_serve(body as Player)
-			return
 
 
 func _serve(player: Player) -> void:
@@ -98,8 +106,12 @@ func _serve(player: Player) -> void:
 	rubbish_sorted.emit(accepts_kind)
 
 
-## Where the bin is actually drawn, worked out from the sprite rather than
-## hard-coded, so a test can check it stays put.
+## Where the bin's artwork actually lands on screen, taken from the sprite's own
+## transform rather than from the region and offset by hand, so it stays correct
+## whatever the artwork or the anchor is changed to. Measured against a real
+## render: these are the pixels the bin is drawn on.
 func drawn_rect() -> Rect2:
-	var drawn_size: Vector2 = art_region.size * sprite.scale
-	return Rect2(global_position + sprite.offset, drawn_size)
+	var local := sprite.get_rect()
+	var top_left: Vector2 = sprite.global_transform * local.position
+	var bottom_right: Vector2 = sprite.global_transform * local.end
+	return Rect2(top_left, bottom_right - top_left)

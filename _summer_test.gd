@@ -8,9 +8,9 @@ extends Node2D
 ## here is read out of the live level, so a check cannot pass just because the
 ## level was never really built.
 ##
-## Order matters. The six wrong-bin cases run first, while all three pieces of
-## rubbish are still in the level, because after the last one is sorted the level
-## is finished and there is nothing left to carry.
+## Order matters. The rubbish-reachability checks and the six wrong-bin cases both
+## run while all three pieces of rubbish are still in the level, because after the
+## last one is sorted the level is finished and there is nothing left to carry.
 
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
 const SPRING_SCENE := "res://scenes/Level.tscn"
@@ -39,15 +39,28 @@ const SCREEN := Rect2(0.0, 0.0, 1280.0, 720.0)
 const SCREEN_CENTRE := Vector2(640.0, 360.0)
 
 ## Flat open ground, clear of every bin box and every piece of rubbish, so
-## parking here can never be standing in a bin or standing on an item.
+## parking here can never be standing in a bin or standing on an item. The bins
+## sit at x=560, 860 and 1120 and each reaches 45px either side of that, so
+## 150 and 750 are both well clear of the nearest one.
 const PARK_A := Vector2(150.0, GROUND_Y)
-const PARK_B := Vector2(620.0, GROUND_Y)
+const PARK_B := Vector2(750.0, GROUND_Y)
 
 ## Where the two-dog stack test stands them. Also clear of every bin box and
 ## every piece of rubbish: a dog that drifts a little either way while being
 ## stacked must not brush a bin or pick something up, or the test would be
 ## measuring the wrong thing.
 const STACK_X := 150.0
+
+## Where a player jumps from to pick each piece of rubbish up: the sand shelf it
+## is sitting above, and which way the dog leans as it goes. The paper and the
+## plastic are jumped for straight up from the shelf under them; the glass bottle
+## is jumped for from the top shelf, which is the only shelf near it. These are
+## the spots a player would use, not the only spots that happen to work.
+const REACH_SPOTS := {
+	&"paper": {"x": 432.0, "y": 448.0, "dir": 0},
+	&"plastic": {"x": 752.0, "y": 336.0, "dir": 0},
+	&"glass": {"x": 912.0, "y": 224.0, "dir": 1},
+}
 
 const ITEM_TEXTURES := {
 	&"paper": PAPER_TEXTURE,
@@ -177,6 +190,16 @@ func _bin_box(kind: StringName) -> Rect2:
 	return Rect2(bin.position + body.position - shape.size * 0.5, shape.size)
 
 
+## Where a sprite's artwork really lands on screen, from its own transform. Used
+## for the dogs here so "the bin is not drawn over a dog" is measured on pixels
+## rather than on a guessed picture size.
+func _art_of(sprite: Sprite2D) -> Rect2:
+	var local := sprite.get_rect()
+	var top_left: Vector2 = sprite.global_transform * local.position
+	var bottom_right: Vector2 = sprite.global_transform * local.end
+	return Rect2(top_left, bottom_right - top_left)
+
+
 func _stand_in(p: Player, kind: StringName) -> void:
 	var bin := bins[kind] as TrashBin
 	_place(p, Vector2(bin.position.x, bin.position.y))
@@ -259,6 +282,7 @@ func _watch_for_completion() -> void:
 func _run() -> void:
 	await _test_the_level_is_summer()
 	await _test_the_dogs_still_play()
+	await _test_every_piece_of_rubbish_can_be_reached()
 	await _test_the_wrong_bins_refuse_everything()
 	await _test_the_right_bins_sort_for_good()
 	await _test_the_completion_screen()
@@ -343,8 +367,21 @@ func _test_the_level_is_summer() -> void:
 		_check("the %s bin is on the flat ground" % kind,
 			bin != null and is_equal_approx(bin.position.y, GROUND_Y),
 			" y=%.1f" % bin.position.y)
-		_check("the %s bin is drawn from its bottom edge, so it stands up" % kind,
-			bin != null and is_equal_approx(bin.sprite.offset.y, -bin.art_region.size.y))
+		# The sprite is centred, so it is lifted by half its own height and by
+		# nothing sideways: that puts the artwork's bottom edge on the node and
+		# its middle over the node, which is what makes the bin stand on the
+		# ground instead of hovering over it or hanging off to one side.
+		_check("the %s bin is anchored bottom edge to its node" % kind,
+			bin != null and is_equal_approx(bin.sprite.offset.y, -bin.art_region.size.y * 0.5)
+			and is_zero_approx(bin.sprite.offset.x),
+			" offset=%s" % bin.sprite.offset)
+		var drawn: Rect2 = bin.drawn_rect()
+		_check("and the %s bin really is drawn standing on the ground" % kind,
+			is_equal_approx(drawn.end.y, bin.position.y),
+			" art bottom=%.1f node y=%.1f" % [drawn.end.y, bin.position.y])
+		_check("and the %s bin is drawn over its own node, not beside it" % kind,
+			is_equal_approx(drawn.get_center().x, bin.position.x),
+			" art centre x=%.1f node x=%.1f" % [drawn.get_center().x, bin.position.x])
 		_check("the %s bin is inside the screen" % kind,
 			bin != null and SCREEN.has_point(bin.position + Vector2(0.0, -56.0)))
 	_check("the bins do not all share one picture",
@@ -367,6 +404,32 @@ func _test_the_level_is_summer() -> void:
 		and glass_box.position.x - plastic_box.end.x >= 150.0)
 	_check("a dog cannot be in two bins at once",
 		BIN_REGION_SIZE.x < plastic_box.position.x - paper_box.end.x)
+
+	# A bin standing on the ground can still look wrong without the physics
+	# noticing anything: drawn into a wall, or drawn on top of a dog. Both were
+	# real here once, so both are checked against the artwork's real pixels.
+	var constants: Dictionary = level.get_script().get_script_constant_map()
+	var wall_width: float = constants.get("WALL_WIDTH", 16.0)
+	var level_width: float = constants.get("LEVEL_WIDTH", 1280.0)
+	var left_wall := Rect2(0.0, 0.0, wall_width, 720.0)
+	var right_wall := Rect2(level_width - wall_width, 0.0, wall_width, 720.0)
+	var spawn_art: Array[Rect2] = []
+	for dog: Player in [p1, p2]:
+		spawn_art.append(_art_of(dog.sprite))
+	for kind in KINDS:
+		var bin := bins[kind] as TrashBin
+		var drawn: Rect2 = bin.drawn_rect()
+		_check("the %s bin is not drawn into a wall" % kind,
+			not drawn.intersects(left_wall) and not drawn.intersects(right_wall),
+			" art x %.0f..%.0f" % [drawn.position.x, drawn.end.x])
+		var over_dog := false
+		for rect in spawn_art:
+			if drawn.intersects(rect):
+				over_dog = true
+		_check("and the %s bin is not drawn on top of a dog" % kind, not over_dog)
+		_check("and the %s bin's own collider is off the walls too" % kind,
+			not _bin_box(kind).intersects(left_wall)
+			and not _bin_box(kind).intersects(right_wall))
 
 	# The rubbish: the right picture for each kind, one of each, nothing else.
 	_check("there are three pieces of rubbish", items.size() == 3
@@ -499,8 +562,87 @@ func _test_the_dogs_still_play() -> void:
 	_emit("")
 
 
+## Every piece of rubbish has to be gettable at, by jumping for it the way a
+## player does: standing on the sand shelf underneath and jumping. Rubbish that
+## can only be reached from one lucky pixel of floor, or not at all, leaves a
+## level that cannot be finished, so each piece is checked twice - once with one
+## dog on its own, and once with the two dogs stacked, which is the other way
+## this game is meant to be played.
+func _test_every_piece_of_rubbish_can_be_reached() -> void:
+	_emit("=== 3. every piece of rubbish can be jumped for, solo and stacked ===")
+
+	for kind in KINDS:
+		var spot: Dictionary = REACH_SPOTS[kind]
+		var x: float = spot["x"]
+		var y: float = spot["y"]
+		var dir: int = spot["dir"]
+		_check("the %s can be picked up off the shelf above it, on its own" % kind,
+			await _can_reach(kind, x, y, dir, false),
+			" from x=%.0f y=%.0f dir=%+d" % [x, y, dir])
+		_check("and the %s can still be picked up with the two dogs stacked" % kind,
+			await _can_reach(kind, x, y, dir, true),
+			" from x=%.0f y=%.0f dir=%+d" % [x, y, dir])
+
+	# Reaching a piece of rubbish and letting go of it again has to leave the level
+	# exactly as it was, or the rest of the suite would be testing a level that is
+	# not the one the game starts with.
+	await _park()
+	_check("all three pieces are still in the level after all that reaching",
+		_items_left() == 3, " left=%d" % _items_left())
+	_check("and neither dog is still holding anything",
+		p1.carried_kind == &"" and p2.carried_kind == &"")
+	_emit("")
+
+
+## Whether a dog can really pick this piece of rubbish up from one standing spot.
+## Both dogs are put back on clear ground first, one of them is stood where a
+## player would stand, it jumps, and this only passes if the rubbish genuinely
+## changed hands: anything weaker than a real pickup would let a level nobody can
+## finish look fine.
+func _can_reach(kind: StringName, at_x: float, at_y: float, dir: int,
+		stacked: bool) -> bool:
+	await _park()
+	var stored: Variant = _item(kind)
+	if not is_instance_valid(stored):
+		return false
+	var item := stored as GardenItem
+	# A piece that has just been put back cannot be taken again straight away.
+	for _i in 60:
+		if item._respawn_timer <= 0.0:
+			break
+		await get_tree().physics_frame
+
+	if stacked:
+		if not await _stack_at(p1, p2, at_x, at_y):
+			return false
+	else:
+		_place(p1, Vector2(at_x, at_y))
+		await _wait(6)
+
+	await _hold([p1.jump_action], 2)
+	var steering: Array = []
+	if dir > 0:
+		steering = [p1.right_action]
+	elif dir < 0:
+		steering = [p1.left_action]
+	for _i in 80:
+		if not steering.is_empty():
+			Input.action_press(steering[0])
+		await get_tree().physics_frame
+		if p1.carried_kind == kind:
+			break
+	for action in steering:
+		Input.action_release(action)
+
+	var picked_up := p1.carried_kind == kind
+	# Away from the bins before dropping it, so the drop cannot be mistaken for a
+	# delivery and the piece cannot be used up by accident.
+	await _park()
+	return picked_up
+
+
 func _test_the_wrong_bins_refuse_everything() -> void:
-	_emit("=== 3. all six wrong-bin attempts are refused, with a notice ===")
+	_emit("=== 4. all six wrong-bin attempts are refused, with a notice ===")
 	# Short notice for the six cases so the run does not sit through six 1.2s
 	# pauses; the real 1.2s is checked at the end of this section.
 	level.wrong_bin_notice_time = 0.2
@@ -560,7 +702,7 @@ func _wrong_bin_case(held: StringName, target: StringName) -> void:
 
 
 func _test_the_right_bins_sort_for_good() -> void:
-	_emit("=== 4. the matching bin sorts each kind, and it is gone for good ===")
+	_emit("=== 5. the matching bin sorts each kind, and it is gone for good ===")
 
 	for kind in KINDS:
 		await _park()
@@ -599,7 +741,7 @@ func _test_the_right_bins_sort_for_good() -> void:
 
 
 func _test_the_completion_screen() -> void:
-	_emit("=== 5. the completion screen only arrives once all three are sorted ===")
+	_emit("=== 6. the completion screen only arrives once all three are sorted ===")
 
 	var since_sort := float(Time.get_ticks_msec() - _sorted_at) / 1000.0
 	_check("the banner is not up on the very frame the last sort happened",
