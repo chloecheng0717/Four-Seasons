@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://dpxhayt1opjp4"]
+
+[ext_resource type="Script" uid="uid://ced7txch6levy" path="res://scenes/SummerLevel.gd" id="1_summer_script"]
+[ext_resource type="Texture2D" uid="uid://boypxeav1ftwo" path="res://assets/Level Complete.png" id="2_complete_texture"]
+[ext_resource type="Texture2D" uid="uid://ecpkv7as3uxt" path="res://assets/Next Level.png" id="3_next_texture"]
+
+[node name="SummerLevel" type="Node2D" unique_id=1291702771]
+script = ExtResource("1_summer_script")
+
+[node name="Sky" type="CanvasLayer" parent="." unique_id=1046704052]
+layer = -1
+
+[node name="Colour" type="ColorRect" parent="Sky" unique_id=1855912046]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.64, 0.83, 0.95, 1)
+
+[node name="Water" type="Node2D" parent="." unique_id=566268676]
+
+[node name="Terrain" type="Node2D" parent="." unique_id=431247530]
+
+[node name="Walls" type="Node2D" parent="." unique_id=635896360]
+
+[node name="Trash" type="Node2D" parent="." unique_id=622165341]
+
+[node name="Bins" type="Node2D" parent="." unique_id=529403485]
+
+[node name="Players" type="Node2D" parent="." unique_id=1738207785]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=30225703]
+position = Vector2(640, 360)
+limit_left = 0
+limit_top = 0
+limit_right = 1280
+limit_bottom = 720
+
+[node name="P1Help" type="Label" parent="." unique_id=1069122617]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 464.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "P1   A / D  move      Space  jump"
+
+[node name="P2Help" type="Label" parent="." unique_id=1013136977]
+offset_left = 24.0
+offset_top = 38.0
+offset_right = 504.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "P2   Left / Right  move      Enter  jump"
+
+[node name="GoalHelp" type="Label" parent="." unique_id=1740679579]
+offset_left = 24.0
+offset_top = 66.0
+offset_right = 760.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "Summer: put the paper, the plastic and the glass into the matching bin."
+
+[node name="WrongBin" type="Label" parent="." unique_id=448286939]
+visible = false
+z_index = 102
+offset_left = 440.0
+offset_top = 96.0
+offset_right = 840.0
+offset_bottom = 130.0
+theme_override_colors/font_color = Color(0.7, 0.13, 0.13, 1)
+theme_override_font_sizes/font_size = 22
+text = "Wrong bin!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelComplete" type="Sprite2D" parent="." unique_id=1643775234]
+visible = false
+z_index = 100
+texture_filter = 1
+position = Vector2(640, 360)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("2_complete_texture")
+region_enabled = true
+region_rect = Rect2(16, 0, 472, 256)
+
+[node name="NextLevel" type="TextureButton" parent="." unique_id=1551989352]
+visible = false
+z_index = 101
+offset_left = 870.0
+offset_top = 542.00006
+offset_right = 1382.0
+offset_bottom = 798.00006
+scale = Vector2(0.7, 0.7)
+disabled = true
+texture_normal = ExtResource("3_next_texture")

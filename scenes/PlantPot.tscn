@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/PlantPot.gd" id="1_pot_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pot"]
+size = Vector2(100, 170)
+
+[node name="PlantPot" type="Area2D"]
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_pot_script")
+
+[node name="Pot" type="Sprite2D" parent="."]
+texture_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -85)
+shape = SubResource("RectangleShape2D_pot")
+
+[node name="Status" type="Label" parent="."]
+offset_left = -80.0
+offset_top = -210.0
+offset_right = 80.0
+offset_bottom = -186.0
+theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1

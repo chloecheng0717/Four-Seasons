@@ -1,0 +1,16 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+/build/
+/export/
+
+# Throwaway measurement probes (created during a task, deleted at the end of it)
+/_probe_*.gd
+/_probe_*.tscn
+/_probe_*.uid
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp

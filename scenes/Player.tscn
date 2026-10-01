@@ -1,0 +1,42 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/Player.gd" id="1_player_script"]
+[ext_resource type="Texture2D" path="res://assets/Spring/Cat1.png" id="2_cat1_texture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(60, 52)
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 3
+floor_snap_length = 6.0
+script = ExtResource("1_player_script")
+cat_texture = ExtResource("2_cat1_texture")
+cat_region = Rect2(11, 16, 129, 96)
+
+[node name="Cat" type="Sprite2D" parent="."]
+texture_filter = 1
+region_enabled = true
+region_rect = Rect2(11, 16, 129, 96)
+scale = Vector2(0.5833333, 0.5833333)
+offset = Vector2(0, -48)
+texture = ExtResource("2_cat1_texture")
+
+[node name="CarriedIcon" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(44, -44)
+texture_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -26)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -52.0
+offset_top = -84.0
+offset_right = 52.0
+offset_bottom = -64.0
+theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
+theme_override_font_sizes/font_size = 14
+text = "P1"
+horizontal_alignment = 1
