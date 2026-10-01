@@ -69,8 +69,11 @@ the project and the automated test suites.**
 - Viewport 1280x720, stretch mode `canvas_items`.
 - `3d/physics_engine="Jolt Physics"` is set in `project.godot`, but this is a
   2D game so it has **no effect**; 2D physics is Godot Physics.
-- **This is NOT a git repository** (a `.gitignore` exists but there is no `.git`).
-  There is no commit history — do not rely on `git log`.
+- **This is a git repository since 2026-10-01.** The project had no version
+  control at all until then; the first commit is the working project as it stood
+  before the Summer bin fixes, and the second is those fixes. `git log` is now
+  meaningful, and `.gitignore` keeps `.godot/`, `/android/`, build output,
+  throwaway `/_probe_*` measurement scripts and OS clutter out of it.
 
 ### 2-player local multiplayer
 - Two players spawned by `scenes/Level.gd` from the `PLAYER_SPAWNS` array.
@@ -583,7 +586,7 @@ assets/
 | `assets/Next Level.png` | The Next Level button picture (512x256, artwork 408x232) | **Yes** — the `NextLevel` `TextureButton` in `Level.tscn`, and `NEXT_TEXTURE` in `_garden_test.gd` / `_next_level_test.gd`. Also shared, so also left in the root of `assets/`. |
 | `assets/Cat.png` | An earlier/generic cat image | **No — unused.** Imported by the engine but referenced by no scene or script. Safe to delete, but left alone. |
 | `icon.svg` | Window/project icon | **Yes** — `config/icon` in `project.godot` |
-| `.gitattributes`, `.gitignore` | Repo hygiene files | Present, but there is **no git repo** |
+| `.gitattributes`, `.gitignore` | Repo hygiene files | **Yes** — the project is a git repo since 2026-10-01. `.gitignore` covers `.godot/`, `/android/`, build folders, throwaway `/_probe_*` scripts and OS clutter. |
 
 ### The Summer pictures
 
@@ -635,7 +638,7 @@ these exist yet.
 |---|---|
 | `scenes/Level.tscn` | **Main scene.** A mostly empty `Node2D` that acts as a container: `Terrain`, `Walls`, `Garden`, `Players` child nodes, a static `Camera2D`, two control-help labels, a `GoalHelp` line, a hidden `LevelComplete` banner, and the `NextLevel` `TextureButton` that shares its completion screen. `Level.gd` populates all of it in code at `_ready()`. |
 | `scenes/SummerLevel.tscn` | **Summer, built 2026-09-30.** A `Node2D` that `SummerLevel.gd` fills in code at `_ready()`, exactly like Spring's `Level.tscn`: `Water`, `Terrain`, `Walls`, `Trash`, `Bins`, `Players`, a static `Camera2D`, control-help labels, a `GoalHelp` line, a `WrongBin` `Label` (hidden, `z_index` 102), the shared `LevelComplete` banner (hidden, `z_index` 100) and the shared `NextLevel` `TextureButton` (hidden, disabled, `z_index` 101, same offsets/scale as Spring). Also prints `NEXT LEVEL REACHED SUMMER` and quits 0 under `--next-level-check`, so `_next_level_test` still works. **A finished Summer loads Spring again** (`NEXT_SCENE = res://scenes/Level.tscn`) because Autumn and Winter do not exist yet. |
-| `scenes/TrashBin.tscn` | One Summer bin. `Area2D` (layer 8, mask 2) with a `Bin` `Sprite2D` and a 90x110 collider at `(0, -45)`. Only the art and the accepted kind differ per bin, so all three are the same scene with different exported values. |
+| `scenes/TrashBin.tscn` | One Summer bin. `Area2D` (layer 8, mask 2) with a `Bin` `Sprite2D`, a 90x110 collider at `(0, -45)`, and a `BinLabel` `Label` above it (added 2026-10-01) reading "Paper Bin" / "Plastic Bin" / "Glass Bin". Only the art and the accepted kind differ per bin, so all three are the same scene with different exported values. |
 | `scenes/Player.tscn` | One cat. `CharacterBody2D` (layer 2, mask 3, snap 6) with a `Sprite2D` (`Cat`), a hidden `CarriedIcon` `Sprite2D` for a carried gardening item, a `CollisionShape2D` (60x52 at y=-26), and a `NameLabel`. Ships with Cat1 as a placeholder texture; `Level.gd` and `SummerLevel.gd` override it per player — **Summer overrides it with a dog and needs nothing else changed.** |
 | `scenes/GroundTile.tscn` | One 64x56 ground/platform tile. `StaticBody2D` on layer 1 with a collider at `(32, 28)`. |
 | `scenes/GardenItem.tscn` | One collectable. `Area2D` (layer 8, mask 2) with a `Sprite2D` and a `CollisionShape2D` that `GardenItem.gd` resizes from `pickup_size`. **It has no `Label` child any more** — the picture is the only thing that identifies it. |
@@ -654,8 +657,8 @@ these exist yet.
 | Script | Purpose |
 |---|---|
 | `scenes/Level.gd` | Builds the entire level procedurally from constants: ground, platforms, walls, players, and the garden (three items plus the pot). Holds `PLAYER_SPAWNS` (per-player actions/texture/crop/spawn) and `GARDEN_ITEMS`. Every frame it sorts the players by y to set `z_index` so the lower cat draws behind. `_ready()` forces the `NextLevel` button hidden and disabled so it cannot appear during gameplay. `_on_level_complete()` starts the `complete_banner_delay` countdown that reveals the `LevelComplete` banner; `_reveal_banner()` shows the banner and the `NextLevel` button together, and `_on_next_level_pressed()` loads Summer (`SUMMER_SCENE`). Also holds `PLATFORM_ROWS`, `GROUND_ROW`, `POT_POSITION`, `TILE_WIDTH/HEIGHT`. |
-| `scenes/SummerLevel.gd` | Builds the whole Summer level in code from constants, the same way `Level.gd` builds Spring: sand ground (row 10, 20 columns, 3 rows) and three platform rows, the decorative sea, walls, two dogs, three pieces of rubbish and three bins. Holds `PLAYER_SPAWNS` (the dogs, cropped like the cats), `TRASH_ITEMS`, `BINS` (each bin's kind, picture, crop and position), `PLATFORM_ROWS`, `wrong_bin_notice_time` (1.2s) and `complete_banner_delay` (1.5s, the same pause Spring uses). `_on_rubbish_sorted()` counts against the kinds taken from the bins themselves and calls `_finish_level()` on the last one; `_on_wrong_bin()` shows the `WrongBin` label and starts its timer; `_reveal_banner()` shows the banner and the Next Level button together; `_on_next_level_pressed()` loads `NEXT_SCENE`. Also still quits 0 with `NEXT LEVEL REACHED SUMMER` under `--next-level-check`. |
-| `scenes/TrashBin.gd` | One Summer bin. The sorting rule, and nothing else: exports `accepts_kind`, `bin_texture`, `art_region`, `display_height`; crops its own picture; polls overlapping players every frame (the same way `PlantPot.gd` does, so a dog that walks in already carrying the right thing is served). The right kind calls `Player.consume_carried()`, sets `is_filled` and emits `rubbish_sorted`; the wrong kind emits `wrong_bin` and **takes nothing**; an empty dog is ignored. **The bin node stays in the level either way.** |
+| `scenes/SummerLevel.gd` | Builds the whole Summer level in code from constants, the same way `Level.gd` builds Spring: sand ground (row 10, 20 columns, 3 rows) and three platform rows, the decorative sea, walls, two dogs, three pieces of rubbish and three bins **on the ground at y=560** (paper `(560,560)`, plastic `(860,560)`, glass `(1120,560)`). Holds `PLAYER_SPAWNS` (the dogs, cropped like the cats), `TRASH_ITEMS` (paper `(434,322)`, plastic bag `(752,200)`, glass bottle `(1136,230)`), `BINS` (each bin's kind, picture, crop and position), `PLATFORM_ROWS`, `wrong_bin_notice_time` (1.2s) and `complete_banner_delay` (1.5s, the same pause Spring uses). `_on_rubbish_sorted()` counts against the kinds taken from the bins themselves and calls `_finish_level()` on the last one; `_on_wrong_bin()` shows the `WrongBin` label and starts its timer; `_reveal_banner()` shows the banner and the Next Level button together; `_on_next_level_pressed()` loads `NEXT_SCENE`. Also still quits 0 with `NEXT LEVEL REACHED SUMMER` under `--next-level-check`. |
+| `scenes/TrashBin.gd` | One Summer bin. The sorting rule, and nothing else: exports `accepts_kind`, `bin_texture`, `art_region`, `display_height`; crops its own picture and anchors it **bottom edge to its node** (`sprite.offset = (0, -region.height * 0.5)`, the same anchor `Player.gd` uses — the sprite is centred, so the old `(-width * 0.5, -height)` offset drew the artwork a whole `display_height` above the ground and half a width to the left); polls overlapping players every frame and serves **every** dog in the box, not just the first (the same way `PlantPot.gd` does, so a dog that walks in already carrying the right thing is served, and a stacked pair is never missed). The right kind calls `Player.consume_carried()`, sets `is_filled` and emits `rubbish_sorted`; the wrong kind emits `wrong_bin` and **takes nothing**; an empty dog is ignored. `drawn_rect()` reports the artwork's real screen pixels, read from `sprite.get_rect()` through the sprite's global transform. **The bin node stays in the level either way.** |
 | `scenes/Player.gd` | All cat behaviour: input, gravity, jumping, coyote/buffer, floor snap, artwork, facing, the ride/stack system, and carrying one gardening item. Tuning constants at the top (`SPEED`, `GRAVITY`, `JUMP_VELOCITY`, `COYOTE_TIME`, `JUMP_BUFFER`, `SUPPORT_GRACE`, `RIDE_CATCH`, `PLAYER_LAYER`, `CARRIED_ICON_HEIGHT`). Carrying is only `carried_kind`, `drop_carried()`, `consume_carried()` and `_clear_carrying()` — the movement and ride code below them is untouched. |
 | `scenes/GroundTile.gd` | Flips the tile sprite vertically when `buried` is true so the ground block looks filled in. Also applies the optional `surface_texture` / `surface_region` overrides, which is how Summer puts sand on the same tile scene. **Both default to Spring's values, so Spring is unaffected.** |
 | `scenes/GardenItem.gd` | One collectable. Crops and scales its picture, picks itself up when an empty-handed cat stands in it, and has the two ways out: `respawn()` puts itself back on its spawn point, `consume()` removes the node from the level for good. |
@@ -861,9 +864,11 @@ is sorted the moment its collider overlaps the bin — including brushing past i
 on the way to somewhere else. That is the behaviour the brief asked for
 ("the player carries the item to the correct bin"), and it is also how Spring's
 pot behaves, so it is consistent. But it does mean the bins need to be spaced out
-enough that walking past one cannot sort by accident. They are: paper at x=320,
-plastic at x=720, glass at x=1140, so the boxes are ~310px apart and the level
-has no path that passes through a bin on the way to somewhere else.
+enough that walking past one cannot sort by accident. They are: paper at x=560,
+plastic at x=860, glass at x=1120, so the boxes sit 210px and 170px apart and
+`_summer_test` §1 asserts they neither overlap nor touch even with 24px of slack.
+Note that a stacked pair can now be inside a bin's box at the same time, which is
+why `_serve` runs for every overlapping dog instead of stopping at the first.
 
 ### Known design risk: the water's reach margin is about 6px
 
@@ -1041,10 +1046,19 @@ hand, so that is the first thing to do:
    confusing (§7).
 2. Confirm the transition both ways by hand: Spring's button must land on
    Summer, and Summer's button must land back on Spring.
-3. `git init` and commit. The project still has no version control, and two
-   seasons of work now have no way to be rolled back.
+3. ~~`git init` and commit.~~ **Done 2026-10-01** — two commits so far: the
+   project as it stood before the Summer bin fixes, and the fixes themselves.
+   Keep committing as work lands; this list is the only other record of what has
+   happened and it is not a substitute for history.
 4. Then, and only then, decide what Autumn should be — and change `NEXT_SCENE`
    in `SummerLevel.gd` when it exists.
+
+**One thing to watch on that first manual playthrough:** the Summer bins now sit
+in a row along the right-hand half of the beach (`x = 560, 860, 1120`) instead of
+being spread to the far left as the layout picture has it, because the dogs spawn
+on the left of the beach floor and the lowest sand shelf covers the rest of it. A
+human should confirm that row of bins still reads as three separate destinations
+rather than as a fence, and that the `Bin` labels sit legibly on each.
 
 **Explicitly not started, and not to be started yet:** Autumn, Winter, menus,
 level selection, and any level-management or scene-flow architecture beyond the
