@@ -18,6 +18,15 @@ const PLAYER_LAYER := 2
 # How tall a carried gardening item is drawn beside the cat.
 const CARRIED_ICON_HEIGHT := 40.0
 
+# Ice, and only ice. A player standing on a slippery GroundTile takes time to
+# build up to full speed and longer still to stop, which is what makes an ice
+# patch feel different from the snow beside it. Acceleration is high so a patch
+# is still perfectly playable; deceleration is far lower, so letting go of the
+# direction on ice sends you sliding instead of stopping you dead. Both are
+# compared against the same SPEED every other surface uses.
+const ICE_ACCELERATION := 900.0
+const ICE_DECELERATION := 260.0
+
 @export var left_action: StringName = &"p1_left"
 @export var right_action: StringName = &"p1_right"
 @export var jump_action: StringName = &"p1_jump"
@@ -40,6 +49,8 @@ var carried_kind: StringName = &""
 # thing for the other way an item can leave: the pot using it for good.
 var _put_back: Callable = Callable()
 var _use_up: Callable = Callable()
+# Track carried fish separately so they don't interfere with normal item carrying
+var _carried_fish: Array[Node2D] = []
 
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
@@ -101,7 +112,7 @@ func can_pick_up() -> bool:
 
 ## Called by a GardenItem the moment this player walks into it.
 func pick_up(kind: StringName, texture: Texture2D, region: Rect2,
-		put_back: Callable, use_up: Callable) -> void:
+		put_back: Callable, use_up: Callable, item_node: Node2D = null) -> void:
 	carried_kind = kind
 	_put_back = put_back
 	_use_up = use_up
@@ -115,6 +126,8 @@ func pick_up(kind: StringName, texture: Texture2D, region: Rect2,
 	var icon_scale: float = CARRIED_ICON_HEIGHT / source_size.y
 	carried_icon.scale = Vector2(icon_scale, icon_scale)
 	carried_icon.visible = true
+	if item_node != null:
+		_carried_fish.append(item_node)
 
 	# The name label is left alone on purpose. The picture beside the cat already
 	# says what is being carried, so there is no wording added here.
@@ -126,8 +139,11 @@ func pick_up(kind: StringName, texture: Texture2D, region: Rect2,
 func drop_carried() -> void:
 	if carried_kind == &"":
 		return
-	_put_back.call()
+	# Save callables before clearing
+	var put_back = _put_back
 	_clear_carrying()
+	if put_back.is_valid():
+		put_back.call()
 
 
 ## Stops carrying the item because the pot has actually taken it. The item is
@@ -136,8 +152,10 @@ func drop_carried() -> void:
 func consume_carried() -> void:
 	if carried_kind == &"":
 		return
-	_use_up.call()
+	var use_up = _use_up
 	_clear_carrying()
+	if use_up.is_valid():
+		use_up.call()
 
 
 ## Empties our hands. Deliberately calls neither callback: whether the item goes
@@ -148,6 +166,7 @@ func _clear_carrying() -> void:
 	_use_up = Callable()
 	carried_icon.visible = false
 	name_label.text = label_text
+	_carried_fish.clear()
 
 
 ## The other player, if any, that this one is resting on top of.
@@ -158,6 +177,52 @@ func _player_support() -> Player:
 		if collision.get_normal().y < -0.7 and collision.get_collider() is Player:
 			return collision.get_collider() as Player
 	return null
+
+
+## True when the surface we are actually standing on right now is a slippery tile.
+##
+## Read out of this step's own slide contacts rather than by looking around us, so
+## it reports the ground under our feet and nothing else: standing on a slippery
+## tile does not make us slippery in mid-air, and standing on snow right next to
+## an ice patch does not either. Anything that is not a GroundTile - a plain wall,
+## or another player we are riding - is not slippery.
+func _on_slippery_surface() -> bool:
+	if not is_on_floor():
+		return false
+	for i in get_slide_collision_count():
+		var collider := get_slide_collision(i).get_collider()
+		if collider is GroundTile and (collider as GroundTile).slippery:
+			return true
+	return false
+
+
+## Puts this player back at a known-good spot with none of the co-op state left
+## over, so a reset can never leave a pair half stacked, sliding on at the old
+## speed, or still holding a link to a penguin that is no longer under them.
+##
+## Everything cleared here is state that a normal step manages on its own; doing it
+## in one place means a reset and a level restart cannot disagree about what "clean"
+## means. The carried item is deliberately left alone, because Winter has nothing
+## to carry and reset is only ever about position and physics.
+func reset_to_position(target: Vector2) -> void:
+	# Drop both ends of any ride link first, so neither player is left holding a
+	# reference to the other. Doing it for both in the level, not just for whoever
+	# moved, is what stops a rider being welded to a supporter that has teleported
+	# away underneath it.
+	_set_support(null)
+	_riders.clear()
+	_steering = false
+	_coyote_timer = 0.0
+	_jump_buffer_timer = 0.0
+	_support_grace = 0.0
+	_ride_offset = 0.0
+	_carrying_riders = false
+	_seat_y = 0.0
+	velocity = Vector2.ZERO
+	# A player that was mid-step with its player layer masked off would otherwise
+	# come back unable to touch the other penguin.
+	collision_mask |= PLAYER_LAYER
+	global_position = target
 
 
 func _set_support(new_support: Player) -> void:
@@ -254,7 +319,15 @@ func _physics_process(delta: float) -> void:
 	else:
 		_jump_buffer_timer = maxf(_jump_buffer_timer - delta, 0.0)
 
-	velocity.x = direction * SPEED
+	# Snow, sand and Autumn's leaves all take this line, unchanged: full speed
+	# immediately, and dead stop the instant the direction is released. Only a
+	# tile that says it is slippery is allowed past it.
+	if _on_slippery_surface():
+		var target_speed: float = direction * SPEED
+		var rate: float = ICE_ACCELERATION if not is_zero_approx(direction) else ICE_DECELERATION
+		velocity.x = move_toward(velocity.x, target_speed, rate * delta)
+	else:
+		velocity.x = direction * SPEED
 	velocity.y += GRAVITY * delta
 
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:

@@ -26,7 +26,7 @@ extends Node2D
 
 const LEVEL_SCENE := "res://scenes/Level.tscn"
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
-const NEXT_TEXTURE := preload("res://assets/Next Level.png")
+const NEXT_TEXTURE := preload("res://assets/Next_Button.png")
 
 const GROUND_Y := 560.0
 const POT_X := 900.0
@@ -49,6 +49,17 @@ var _finished := false
 
 
 func _ready() -> void:
+	# This test can only finish if scenes/SummerLevel.gd sees --next-level-check
+	# and quits itself after the swap. Pressing the button frees this node along
+	# with the Spring level, so the _process watchdog below is gone too and
+	# nothing is left to stop a run that never reaches Summer's own quit. Checked
+	# here so a missing argument fails in a second with the invocation it needs,
+	# instead of hanging until the runner's timeout kills it.
+	if not OS.get_cmdline_user_args().has("--next-level-check"):
+		_check("this test needs the user argument --next-level-check", false,
+			" run: --scene res://_next_level_test.tscn -- --next-level-check")
+		_finish(false)
+		return
 	level = (load(LEVEL_SCENE) as PackedScene).instantiate()
 	add_child(level)
 	await get_tree().process_frame

@@ -10,6 +10,11 @@ extends StaticBody2D
 ## empty padding, because the scene's own crop belongs to the scene's own
 ## texture and would be in the wrong place for a different one.
 @export var surface_region: Rect2 = Rect2()
+## When true this tile's surface is slippery and a player standing on it does not
+## start and stop instantly. Winter's ice patches set it; every other tile in the
+## game leaves it false, which is what keeps snow, sand and Autumn's leaves moving
+## exactly as they always have.
+@export var slippery: bool = false
 
 @onready var sprite: Sprite2D = $Sprite
 

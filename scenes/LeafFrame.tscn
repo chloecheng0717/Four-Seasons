@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/LeafFrame.gd" id="1_frame_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_frame"]
+size = Vector2(84, 192)
+
+[node name="LeafFrame" type="Area2D"]
+z_index = 1
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_frame_script")
+
+[node name="Frame" type="Sprite2D" parent="."]
+texture_filter = 1
+
+[node name="PlacedLeaf" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -96)
+shape = SubResource("RectangleShape2D_frame")

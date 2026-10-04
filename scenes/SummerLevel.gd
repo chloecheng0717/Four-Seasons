@@ -147,10 +147,10 @@ const TILE_SCENE := preload("res://scenes/GroundTile.tscn")
 const ITEM_SCENE := preload("res://scenes/GardenItem.tscn")
 const BIN_SCENE := preload("res://scenes/TrashBin.tscn")
 
-## Where the Next Level button goes once Summer is finished. Autumn and Winter
-## are deliberately not built, so a finished Summer returns to Spring rather than
-## becoming a dead end.
-const NEXT_SCENE := "res://scenes/Level.tscn"
+## Where the Next Level button goes once Summer is finished. Autumn exists, so
+## the chain now runs Spring -> Summer -> Autumn. Winter still does not, so a
+## finished Autumn goes back to Spring rather than becoming a dead end.
+const NEXT_SCENE := "res://scenes/AutumnLevel.tscn"
 
 ## How long the Level Complete banner waits after the last piece of rubbish is
 ## sorted, so the sorted beach is visible on its own first. Same as Spring.
@@ -408,7 +408,6 @@ func _on_wrong_bin(_held_kind: StringName, _bin_kind: StringName) -> void:
 	_wrong_bin_timer = wrong_bin_notice_time
 
 
-## The only door out of a finished Summer. Autumn and Winter do not exist yet, so
-## this returns to Spring rather than leaving a finished Summer as a dead end.
+## The only door out of a finished Summer. Autumn is built, so this loads it.
 func _on_next_level_pressed() -> void:
 	get_tree().change_scene_to_file(NEXT_SCENE)

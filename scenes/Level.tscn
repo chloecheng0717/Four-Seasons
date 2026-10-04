@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dqmminl0otuuq" path="res://scenes/Level.gd" id="1_level_script"]
 [ext_resource type="Texture2D" uid="uid://boypxeav1ftwo" path="res://assets/Level Complete.png" id="2_complete_texture"]
-[ext_resource type="Texture2D" uid="uid://ecpkv7as3uxt" path="res://assets/Next Level.png" id="3_next_texture"]
+[ext_resource type="Texture2D" uid="uid://gxeab5jg1850" path="res://assets/Next_Button.png" id="3_next_texture"]
 
 [node name="Level" type="Node2D" unique_id=2009959529]
 script = ExtResource("1_level_script")
@@ -62,10 +62,9 @@ region_rect = Rect2(16, 0, 472, 256)
 [node name="NextLevel" type="TextureButton" parent="." unique_id=2099890819]
 visible = false
 z_index = 101
-offset_left = 870.0
-offset_top = 542.00006
-offset_right = 1382.0
-offset_bottom = 798.00006
-scale = Vector2(0.7, 0.7)
+offset_left = 948.0
+offset_top = 542.0
+offset_right = 1144.0
+offset_bottom = 719.0
 disabled = true
 texture_normal = ExtResource("3_next_texture")

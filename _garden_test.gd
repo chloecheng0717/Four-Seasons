@@ -17,7 +17,7 @@ const SCREEN_CENTRE := Vector2(640.0, 360.0)
 ## The picture shown when the level is finished.
 const COMPLETE_TEXTURE := preload("res://assets/Level Complete.png")
 ## The picture on the Next Level button that appears on the same screen.
-const NEXT_TEXTURE := preload("res://assets/Next Level.png")
+const NEXT_TEXTURE := preload("res://assets/Next_Button.png")
 ## Flat open ground with no platform overhead, nothing to pick up, well clear of
 ## the pot and both walls.
 const PARK_A := Vector2(150.0, GROUND_Y)
@@ -354,13 +354,25 @@ func _test_the_completion_banner() -> void:
 	_check("and carries the Next Level picture", next.texture_normal == NEXT_TEXTURE)
 	_check("and is hidden before the level is finished", not next.visible)
 	_check("and is inert while hidden", next.disabled)
+	# A TextureButton draws its picture into its own rect, so a rect that matches
+	# the PNG at a uniform scale is what proves the new artwork is shown pixel for
+	# pixel - neither shrunk nor stretched, and never squashed sideways.
+	var next_tex_size := Vector2(
+		float(NEXT_TEXTURE.get_width()), float(NEXT_TEXTURE.get_height()))
+	_check("and draws the new picture at its own size, undistorted",
+		next.size * next.scale == next_tex_size,
+		" drawn=%s texture=%s" % [next.size * next.scale, next_tex_size])
+	_check("and is not squashed sideways",
+		is_equal_approx(next.scale.x, next.scale.y), " scale=%s" % next.scale)
 	var next_rect := next.get_global_rect()
-	# The button is deliberately placed low and to the right, so what matters is
-	# that its middle - where the click actually lands - is on the screen, not
-	# that every pixel of its transparent padding is inside the viewport.
+	# The button sits low and to the right, and its middle - where the click
+	# actually lands - is what has to be reachable. The new picture's whole rect
+	# now fits inside the screen, so both are checked.
 	_check("and its middle is on the screen, so it can be clicked",
 		SCREEN.has_point(next_rect.get_center()),
 		" centre=%s" % next_rect.get_center())
+	_check("and the whole button is inside the screen",
+		SCREEN.encloses(next_rect), " %s" % next_rect)
 	_check("and is drawn above the banner", next.z_index > banner.z_index,
 		" z_index=%d" % next.z_index)
 	# Remembered so that section 8 can prove the reveal shows the button exactly

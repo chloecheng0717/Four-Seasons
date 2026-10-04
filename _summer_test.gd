@@ -13,7 +13,7 @@ extends Node2D
 ## last one is sorted the level is finished and there is nothing left to carry.
 
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
-const SPRING_SCENE := "res://scenes/Level.tscn"
+const AUTUMN_SCENE := "res://scenes/AutumnLevel.tscn"
 
 const DOG1_TEXTURE := preload("res://assets/Summer/Dog1.png")
 const DOG2_TEXTURE := preload("res://assets/Summer/Dog2.png")
@@ -28,7 +28,7 @@ const PAPER_BIN_TEXTURE := preload("res://assets/Summer/Paper Bin.png")
 const PLASTIC_BIN_TEXTURE := preload("res://assets/Summer/Plastic Bin.png")
 const GLASS_BIN_TEXTURE := preload("res://assets/Summer/Glass bin.png")
 const COMPLETE_TEXTURE := preload("res://assets/Level Complete.png")
-const NEXT_TEXTURE := preload("res://assets/Next Level.png")
+const NEXT_TEXTURE := preload("res://assets/Next_Button.png")
 
 const DOG_REGION := Rect2(8, 24, 240, 208)
 const BIN_REGION_SIZE := Vector2(90, 110)
@@ -771,11 +771,13 @@ func _test_the_completion_screen() -> void:
 
 	# The button is not pressed here. Pressing it would change the scene out from
 	# under this test and free it, exactly as in _next_level_test, so where it
-	# would go is checked from the level's own declared scene instead. Autumn and
-	# Winter are deliberately not built, so a finished Summer returns to Spring.
+	# would go is checked from the level's own declared scene instead. Autumn is
+	# built, so a finished Summer now leads on to Autumn. (The live Summer ->
+	# Autumn scene change itself is covered by _autumn_transition_test.)
 	var constants: Dictionary = level.get_script().get_script_constant_map()
-	_check("and it leads back to Spring, which does exist",
-		constants.get("NEXT_SCENE") == SPRING_SCENE and ResourceLoader.exists(SPRING_SCENE),
+	_check("and it leads on to Autumn, which does exist",
+		constants.get("NEXT_SCENE") == AUTUMN_SCENE
+			and ResourceLoader.exists(AUTUMN_SCENE),
 		" next=%s" % constants.get("NEXT_SCENE"))
 	_emit("")
 
