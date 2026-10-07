@@ -1,6 +1,6 @@
 # PROGRESS — FourSeasons
 
-**Last updated:** 2026-10-04
+**Last updated:** 2026-10-08
 **Project root:** `C:\Users\Chloe Cheng\OneDrive\Documents\FourSeasons`
 **Engine:** Godot 4.7.2 stable (`4.7`, GL Compatibility renderer)
 
@@ -29,7 +29,12 @@ next:
 Spring -> Summer -> Autumn -> Winter -> Spring
 ```
 
-A season selector and a level manager still **do not exist**.
+**The game now opens on a title screen** (built 2026-10-08): Play, How to Play,
+Settings, Quit, over a background that cycles through the four seasons. Every
+level has a **pause menu** (Esc or the Pause button) and a **settings panel**
+(music, sound, text size, fullscreen), both dressed in that level's season
+colours. See §9, 2026-10-08. A season selector and a level manager still
+**do not exist** — Play always starts Spring.
 
 Winter was built on 2026-10-04, and on the same day Autumn was wired to hand over to
 it, which closed the loop over all four finished seasons. That handover was a
@@ -92,7 +97,8 @@ the project and the automated test suites.**
 
 ### Godot project setup
 - Godot 4.7.2, `config_version=5`, renderer `gl_compatibility`.
-- Main scene: `res://scenes/Level.tscn`.
+- Main scene: `res://scenes/TitleScreen.tscn` (since 2026-10-08; it was
+  `res://scenes/Level.tscn`, Spring, before that).
 - Viewport 1280x720, stretch mode `canvas_items`.
 - `3d/physics_engine="Jolt Physics"` is set in `project.godot`, but this is a
   2D game so it has **no effect**; 2D physics is Godot Physics.
@@ -1147,7 +1153,7 @@ these exist yet.
 
 | Scene | Purpose |
 |---|---|
-| `scenes/Level.tscn` | **Main scene.** A mostly empty `Node2D` that acts as a container: `Terrain`, `Walls`, `Garden`, `Players` child nodes, a static `Camera2D`, two control-help labels, a `GoalHelp` line, a hidden `LevelComplete` banner, and the `NextLevel` `TextureButton` that shares its completion screen. `Level.gd` populates all of it in code at `_ready()`. |
+| `scenes/Level.tscn` | **Spring** (was the main scene until 2026-10-08; Play on the title loads it). A mostly empty `Node2D` that acts as a container: `Terrain`, `Walls`, `Garden`, `Players` child nodes, a static `Camera2D`, two control-help labels, a `GoalHelp` line, a hidden `LevelComplete` banner, and the `NextLevel` `TextureButton` that shares its completion screen. `Level.gd` populates all of it in code at `_ready()`. |
 | `scenes/SummerLevel.tscn` | **Summer, built 2026-09-30.** A `Node2D` that `SummerLevel.gd` fills in code at `_ready()`, exactly like Spring's `Level.tscn`: `Water`, `Terrain`, `Walls`, `Trash`, `Bins`, `Players`, a static `Camera2D`, control-help labels, a `GoalHelp` line, a `WrongBin` `Label` (hidden, `z_index` 102), the shared `LevelComplete` banner (hidden, `z_index` 100) and the shared `NextLevel` `TextureButton` (hidden, disabled, `z_index` 101, same offsets/scale as Spring). Also prints `NEXT LEVEL REACHED SUMMER` and quits 0 under `--next-level-check`, so `_next_level_test` still works. **A finished Summer loads Autumn** (`NEXT_SCENE = res://scenes/AutumnLevel.tscn`, changed 2026-10-03). |
 | `scenes/TrashBin.tscn` | One Summer bin. `Area2D` (layer 8, mask 2) with a `Bin` `Sprite2D`, a 90x110 collider at `(0, -45)`, and a `BinLabel` `Label` above it (added 2026-10-01) reading "Paper Bin" / "Plastic Bin" / "Glass Bin". Only the art and the accepted kind differ per bin, so all three are the same scene with different exported values. |
 | `scenes/AutumnLevel.tscn` | **Autumn, built 2026-10-02.** A `Node2D` that `AutumnLevel.gd` fills in code at `_ready()`, the same way the other two seasons work: `Terrain`, `Walls`, `Trees`, `Leaves`, `Frames`, `Players` child nodes, a `Camera2D` (limits 0..4800 / 0..720, `y = 360`), control-help labels, and the shared `LevelComplete` banner and `NextLevel` `TextureButton` at Spring's exact offsets. Also prints `NEXT LEVEL REACHED AUTUMN` and quits 0 under `--autumn-check`. **The first scrolling level.** |
@@ -1168,6 +1174,10 @@ these exist yet.
 | `scenes/Fish.tscn` | One of Winter's two fish, reused twice. `Area2D` root with an `Art` `Sprite2D` and a `Pickup` `CollisionShape2D` built in code from `pickup_size`. On no collision layer, masking only the penguin layer. **Collecting hides it and turns its own monitoring off; it is never freed**, because an icicle hit has to be able to bring it back. |
 | `tests/_winter_test.tscn` | Test scene: wraps `tests/_winter_test.gd`. Not part of the game. In `tests/` for the same reason as Autumn's. |
 | `tests/_season_chain_test.tscn` | Test scene: wraps `tests/_season_chain_test.gd`. Not part of the game. Needs a `--autumn-check` or `--winter-check` user argument to run. |
+| `scenes/TitleScreen.tscn` | **Main scene since 2026-10-08.** The title (wireframe A): a `Seasons` `Node2D` that `TitleScreen.gd` fills with four season backgrounds in code, and a `UI` `CanvasLayer` with the title, season badge, Play / How to Play / Settings / Quit, a hidden How to Play panel and a hidden `SettingsMenu` instance. |
+| `scenes/PauseMenu.tscn` | The pause menu (wireframe C), **one instance in each of the four level scenes**, with `season` set on the node. A `CanvasLayer` (layer 50, `process_mode = Always`) holding the corner Pause button, the hidden overlay (Resume / Restart this season / Settings / Back to title, plus the inline "Go back to the title?" confirm) and a `SettingsMenu` instance. |
+| `scenes/SettingsMenu.tscn` | The settings panel (wireframe D): Music volume, Sound volume and Text size sliders, a Fullscreen check box, Back. Used by both the title and the pause menu. |
+| `tests/_menus_test.tscn` | Test scene: wraps `tests/_menus_test.gd`. Not part of the game. |
 | `_diag.tscn` | A leftover physics-trace diagnostic. Not part of the game; see §7. |
 
 ---
@@ -1195,6 +1205,12 @@ these exist yet.
 | `_garden_test.gd` | Automated regression suite (136 checks) for the Spring gardening mechanic, including used-up items being gone for good, the water needing both cats, carrying while stacked, the completion banner being the `Level Complete` picture rather than the old label, the `NextLevel` button sharing the completion screen (real `TextureButton`, right picture, **hidden and inert before the finish**, centre on screen, above the banner, unmoved by the reveal, **drawn at the picture's own size with a uniform scale so it cannot be stretched or squashed, and wholly inside the screen**), and the pause between the flower appearing and the banner turning up. |
 | `_next_level_test.gd` | Automated end-to-end suite (20 checks) for the season transition: a real Spring run to the flower, the completion pause, the banner and Next Level button appearing together, the button's `pressed` being wired to the level's handler, and then pressing it — the scene change frees the test and the built Summer level proves the arrival by printing `NEXT LEVEL REACHED SUMMER` and quitting 0. Never presses the button if any earlier check failed. |
 | `_summer_test.gd` | Automated regression suite (**152 checks**) for Summer: the scene really is built and is not Spring, two dogs cropped to the dog art, the controls unchanged, sand on every tile, the sea is decoration only and drawn behind the level, three bins with three different pictures that do not touch, each standing on the ground with its artwork's bottom edge on the ground and centred over its own node, none drawn into a wall or on top of a dog, three pieces of rubbish each nearest its own bin, the completion screen and button hidden and inert at the start, dogs move/jump/face/stack on their own keys and can stack while carrying, **every piece of rubbish is really picked up by jumping for it from the shelf below it, solo and stacked**, **all six wrong-bin pairs are refused with a notice that clears itself**, each right bin sorts for good and the rubbish cannot be picked up again, and the completion screen only arrives after the third sort. The Next Level button is never pressed — pressing it would free the test — so its target is read from `NEXT_SCENE` instead. |
+| `scenes/TitleScreen.gd` | The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
+| `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
+| `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
+| `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (no sounds exist yet; a sound put on those buses will follow the sliders). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
+| `scenes/SeasonTheme.gd` | `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
+| `tests/_menus_test.gd` | Automated suite (**171 checks, 7 sections**) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
 | `_diag.gd` | Leftover one-off trace script used to debug the stacking bug. Prints a per-frame table and quits. Not part of the game. |
 | `tests/_winter_test.gd` | Automated regression suite (**140 checks, 12 sections**) for Winter. See §2.4 for what it covers. It reads its expectations back out of the level's own constants rather than hard-coding them, and it measures each tile's real opaque bounding box out of the PNG to prove no crop is cutting any of the artwork off — the check that catches a tile quietly losing its underside. Its fish checks derive the **real** jump rise from `Player.JUMP_VELOCITY` and `Player.GRAVITY` rather than trusting the nominal 128, and really jump for both fish rather than asserting coordinates. |
 | `tests/_season_chain_test.gd` | End-to-end suite (4 checks per leg) for the two chain legs no static check can cover. Run with `-- --autumn-check` it builds the real Summer, finishes it, proves the shared completion screen and button are up and wired, and calls the handler, so Autumn loads and quits 0. Run with `-- --winter-check` it does the same from Autumn, so Winter loads and quits 0. Also proves the button press actually changed the scene: the press frees the test, so a test still alive at 90s is itself the failure. With neither argument it fails in a second with the invocation it needs. |
@@ -1821,7 +1837,7 @@ on the left of the beach floor and the lowest sand shelf covers the rest of it. 
 human should confirm that row of bins still reads as three separate destinations
 rather than as a fence, and that the `Bin` labels sit legibly on each.
 
-**Explicitly not started, and not to be started yet:** menus, level selection, and any
+**Explicitly not started, and not to be started yet:** level selection, and any
 level-management or scene-flow architecture beyond the single hard-coded transition. One
 working season chain beats four half-built worlds. Also not done: any per-bin "filled"
 feedback, any change to the `cat_*` field names (§7), and any manual playthrough by a
@@ -1830,6 +1846,83 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-08 - Title screen, pause menu and settings, each in its season's colours
+
+Done on the second machine (`C:\Users\Hp\Downloads\Four-Seasons`; Godot is at
+`C:\Users\Hp\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe`
+there). Built from the proposal's wireframes A, C and D (Figure 3), with the
+seasonal styling the team asked for.
+
+**What was added**
+- **Title screen, now the main scene** (`scenes/TitleScreen.tscn/.gd`). "Four Seasons",
+  a season badge, and Play (highlighted, keyboard starts on it), How to Play,
+  Settings, Quit (last). The background is four little season scenes made **only from
+  existing art** with the levels' own crops - no new pictures - fading from one to the
+  next every 5s in level order, and the menu's colours follow. Play starts Spring.
+- **Pause menu in every level** (`scenes/PauseMenu.tscn/.gd`): Esc or the corner Pause
+  button. Resume (highlighted, keyboard on it), Restart this season, Settings, Back to
+  title, which asks first with the keyboard on "No, stay".
+- **Settings** (`scenes/SettingsMenu.tscn/.gd`): Music volume, Sound volume, Text
+  size, Fullscreen. Changes apply and save immediately. From the title it wears the
+  season on show; from a level, that level's season.
+- **Shared helpers, no autoload:** `GameSettings.gd` (static vars + `ConfigFile`) and
+  `SeasonTheme.gd` (colours and a `Theme` built in code).
+
+**What was changed**
+- `project.godot`: `run/main_scene` is now `res://scenes/TitleScreen.tscn`.
+- `Level.tscn`, `SummerLevel.tscn`, `AutumnLevel.tscn`, `WinterLevel.tscn`: one
+  `PauseMenu` node each (with its `season`), nothing else. **No level `.gd` changed.**
+
+**Decisions worth knowing**
+- **Volume sliders have nothing to control yet** - there is no audio. They set the
+  `Music` and `SFX` buses, which `GameSettings` creates, so a sound added later only
+  has to be put on one of those buses.
+- **The "slower icicles" and "shape patterns" settings from wireframe D were left
+  out on purpose** - the team asked for volume, text size and fullscreen only.
+- **Saved settings are only applied to the scene actually being played**, never to a
+  level a test builds under its own node. Otherwise a player who chose large text
+  would make Summer's "Wrong bin! does not cover a bin" checks fail.
+- **Text size scales from each label's designed size** (kept in node meta), so moving
+  the slider back and forth never compounds.
+- **The Pause button cannot take keyboard focus** (`focus_mode = None`), because
+  Space and Enter are both jump keys *and* `ui_accept`: a focusable Pause button
+  would be pressed by a jump.
+
+**Testing** - all on this machine, Godot 4.7.2:
+- Baseline before any change: all nine existing suites green (847 checks).
+- After: **ten suites, 1,018 checks, 0 failures** - stack walk 66, stack jump 41,
+  garden 136, summer 152, autumn 284, winter 140, next level 20, both chain legs 4+4,
+  and the new **menus 171**. `--check-only` on every new script: 0 errors. The title
+  and each of the four levels ran 400 frames headless with 0 errors / 0 warnings.
+- **Negative check:** with `PauseMenu.open()` made not to pause, the menus suite fails
+  ("pressing Pause pauses the game", in every season). Restored, green again.
+- **Real renderer:** a throwaway `_probe_` script captured the title in all four
+  seasons, Settings and How to Play on the title, and every level playing, paused, in
+  Settings and (Winter) at the confirm. All looked right; the confirm wording was
+  shortened after seeing it wrap badly. The probe is deleted.
+- The Winter suite still prints its **pre-existing** leak warnings (§7) - identical
+  text before and after this work.
+
+**Gotchas found**
+- **A test node set to keep running while paused passes that on to its children.**
+  The menus suite runs `PROCESS_MODE_ALWAYS` (so it can keep going while it pauses
+  the game), and the first version's Summer level inherited it, so a dog walked
+  while "paused". In the game a level sits under the root and does pause; the suite
+  sets the level back to `PAUSABLE` to match.
+- **`ensure_loaded()` only reads the file the first time.** A test that writes odd
+  values to its settings file on purpose must have already loaded once, or the next
+  scene to call `ensure_loaded()` picks them up (the title was laid out at 1.5x text).
+- **A real (non-headless) probe window takes keyboard input**, so a key pressed on
+  the desktop while it runs can open a menu in the capture. A capture that looks
+  wrong should be re-taken before it is believed.
+
+**Not verified:** nobody has clicked through the menus by hand yet, and fullscreen
+was only exercised through the code path (the headless suites skip it).
+
+**Next:** play it by hand from the title: Play -> Esc -> Settings -> Back -> Restart
+-> Back to title -> Quit, and try the text-size slider inside a level.
+
 
 ### 2026-10-04 - `Fish.gd` is repaired, and the Winter suite runs to the end again
 

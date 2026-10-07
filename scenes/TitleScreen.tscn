@@ -1,0 +1,137 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/TitleScreen.gd" id="1_title_script"]
+[ext_resource type="PackedScene" path="res://scenes/SettingsMenu.tscn" id="2_settings_scene"]
+
+[node name="TitleScreen" type="Node2D"]
+script = ExtResource("1_title_script")
+
+[node name="Seasons" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Menu" type="VBoxContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 56.0
+offset_right = 940.0
+offset_bottom = 540.0
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="UI/Root/Menu"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Four Seasons"
+horizontal_alignment = 1
+
+[node name="Badge" type="Label" parent="UI/Root/Menu"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"SeasonBadge"
+text = "Spring · Cats"
+horizontal_alignment = 1
+
+[node name="Gap" type="Control" parent="UI/Root/Menu"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Buttons" type="VBoxContainer" parent="UI/Root/Menu"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 14
+
+[node name="Play" type="Button" parent="UI/Root/Menu/Buttons"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Play"
+
+[node name="HowToPlay" type="Button" parent="UI/Root/Menu/Buttons"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+text = "How to Play"
+
+[node name="Settings" type="Button" parent="UI/Root/Menu/Buttons"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+text = "Settings"
+
+[node name="Quit" type="Button" parent="UI/Root/Menu/Buttons"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+text = "Quit"
+
+[node name="HowToPlay" type="Control" parent="UI/Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="UI/Root/HowToPlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.16, 0.25, 0.45)
+
+[node name="Center" type="CenterContainer" parent="UI/Root/HowToPlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/Root/HowToPlay/Center"]
+custom_minimum_size = Vector2(820, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/HowToPlay/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 28
+
+[node name="Rows" type="VBoxContainer" parent="UI/Root/HowToPlay/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Heading" type="Label" parent="UI/Root/HowToPlay/Center/Panel/Margin/Rows"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "How to Play"
+horizontal_alignment = 1
+
+[node name="Text" type="Label" parent="UI/Root/HowToPlay/Center/Panel/Margin/Rows"]
+custom_minimum_size = Vector2(740, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+autowrap_mode = 3
+
+[node name="Back" type="Button" parent="UI/Root/HowToPlay/Center/Panel/Margin/Rows"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back"
+
+[node name="Settings" parent="UI/Root" instance=ExtResource("2_settings_scene")]
+visible = false
+layout_mode = 1

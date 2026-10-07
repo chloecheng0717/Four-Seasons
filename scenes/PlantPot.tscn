@@ -1,23 +1,23 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://c5bqs3fkt5c86"]
 
-[ext_resource type="Script" path="res://scenes/PlantPot.gd" id="1_pot_script"]
+[ext_resource type="Script" uid="uid://csdqrb8qm4o10" path="res://scenes/PlantPot.gd" id="1_pot_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pot"]
 size = Vector2(100, 170)
 
-[node name="PlantPot" type="Area2D"]
+[node name="PlantPot" type="Area2D" unique_id=1029163463]
 collision_layer = 8
 collision_mask = 2
 script = ExtResource("1_pot_script")
 
-[node name="Pot" type="Sprite2D" parent="."]
+[node name="Pot" type="Sprite2D" parent="." unique_id=1317324741]
 texture_filter = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1992150149]
 position = Vector2(0, -85)
 shape = SubResource("RectangleShape2D_pot")
 
-[node name="Status" type="Label" parent="."]
+[node name="Status" type="Label" parent="." unique_id=1344526075]
 offset_left = -80.0
 offset_top = -210.0
 offset_right = 80.0

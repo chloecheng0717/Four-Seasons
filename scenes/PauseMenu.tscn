@@ -1,0 +1,140 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/PauseMenu.gd" id="1_pause_script"]
+[ext_resource type="PackedScene" path="res://scenes/SettingsMenu.tscn" id="2_settings_scene"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 50
+script = ExtResource("1_pause_script")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PauseButton" type="Button" parent="Root"]
+layout_mode = 0
+offset_left = 1148.0
+offset_top = 12.0
+offset_right = 1264.0
+offset_bottom = 58.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "Pause"
+
+[node name="Overlay" type="Control" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Root/Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.16, 0.25, 0.55)
+
+[node name="Center" type="CenterContainer" parent="Root/Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Root/Overlay/Center"]
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Overlay/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 32
+
+[node name="Rows" type="VBoxContainer" parent="Root/Overlay/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Heading" type="Label" parent="Root/Overlay/Center/Panel/Margin/Rows"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="Badge" type="Label" parent="Root/Overlay/Center/Panel/Margin/Rows"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"SeasonBadge"
+text = "Spring · Cats"
+horizontal_alignment = 1
+
+[node name="Buttons" type="VBoxContainer" parent="Root/Overlay/Center/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Resume" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Resume"
+
+[node name="Restart" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Restart this season"
+
+[node name="Settings" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Settings"
+
+[node name="BackToTitle" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Back to title"
+
+[node name="Confirm" type="VBoxContainer" parent="Root/Overlay/Center/Panel/Margin/Rows"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Question" type="Label" parent="Root/Overlay/Center/Panel/Margin/Rows/Confirm"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+text = "Go back to the title?
+This season will start over."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Choices" type="HBoxContainer" parent="Root/Overlay/Center/Panel/Margin/Rows/Confirm"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="No" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Confirm/Choices"]
+custom_minimum_size = Vector2(160, 52)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "No, stay"
+
+[node name="Yes" type="Button" parent="Root/Overlay/Center/Panel/Margin/Rows/Confirm/Choices"]
+custom_minimum_size = Vector2(160, 52)
+layout_mode = 2
+text = "Yes, leave"
+
+[node name="Settings" parent="Root" instance=ExtResource("2_settings_scene")]
+visible = false
+layout_mode = 1

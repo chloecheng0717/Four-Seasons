@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://ced7txch6levy" path="res://scenes/SummerLevel.gd" id="1_summer_script"]
 [ext_resource type="Texture2D" uid="uid://boypxeav1ftwo" path="res://assets/Level Complete.png" id="2_complete_texture"]
 [ext_resource type="Texture2D" uid="uid://gxeab5jg1850" path="res://assets/Next_Button.png" id="3_next_texture"]
+[ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="4_pause_menu"]
 
 [node name="SummerLevel" type="Node2D" unique_id=1291702771]
 script = ExtResource("1_summer_script")
@@ -96,3 +97,6 @@ offset_right = 1144.0
 offset_bottom = 719.0
 disabled = true
 texture_normal = ExtResource("3_next_texture")
+
+[node name="PauseMenu" parent="." instance=ExtResource("4_pause_menu")]
+season = "summer"
