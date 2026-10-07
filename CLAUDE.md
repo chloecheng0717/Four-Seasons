@@ -85,6 +85,5 @@ Ask which side should change, the game or the document.
 ## Next steps
 - [ ] Play through by hand from the title: Play → Esc → Settings (drag Text size) → Back
       → Restart → Back to title → Quit. Also try fullscreen for real.
-- [ ] Commit the menu work. It's all uncommitted, along with `.mcp.json` and the proposal `.docx`.
 - [ ] Decide which proposal gaps to close before the 2026-10-09 deadline, or reword the proposal.
 - [ ] Manual checks still open from PROGRESS §8: the Autumn camera seams, the Winter fish routes, the whole season loop.
