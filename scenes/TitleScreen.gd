@@ -118,6 +118,7 @@ Press Esc in any season to pause."""
 @onready var how_button: Button = $UI/Root/Menu/Buttons/HowToPlay
 @onready var settings_button: Button = $UI/Root/Menu/Buttons/Settings
 @onready var quit_button: Button = $UI/Root/Menu/Buttons/Quit
+@onready var buttons_box: Control = $UI/Root/Menu/Buttons
 @onready var how_panel: Control = $UI/Root/HowToPlay
 @onready var how_text: Label = $UI/Root/HowToPlay/Center/Panel/Margin/Rows/Text
 @onready var how_back: Button = $UI/Root/HowToPlay/Center/Panel/Margin/Rows/Back
@@ -153,6 +154,7 @@ func _ready() -> void:
 	settings_menu.closed.connect(_on_settings_closed)
 	quit_button.pressed.connect(_on_quit_pressed)
 
+	_add_button_decorations()
 	_apply_season_to_menu()
 	GameSettings.apply_text_scale(self)
 	play_button.grab_focus()
@@ -170,6 +172,10 @@ func _process(delta: float) -> void:
 
 ## Fades the given season in over the one showing now.
 func show_season(next: String) -> void:
+	# Already showing: nothing to fade. Fading a layer in over itself would end by
+	# hiding it, and leave the title with no background at all.
+	if next == season:
+		return
 	var old_layer: Node2D = season_layers[season]
 	var new_layer: Node2D = season_layers[next]
 	season = next
@@ -186,6 +192,41 @@ func show_season(next: String) -> void:
 func _apply_season_to_menu() -> void:
 	ui_root.theme = SeasonTheme.make_theme(season)
 	badge.text = SeasonTheme.badge_text(season)
+	_update_button_decorations()
+
+
+## Puts two empty picture holders on every menu button, one on each top corner.
+## _update_button_decorations() fills them with the season's pictures. They ignore
+## the mouse, so clicking on one still clicks the button underneath.
+func _add_button_decorations() -> void:
+	for button in buttons_box.get_children():
+		for corner in ["DecorLeft", "DecorRight"]:
+			var picture := TextureRect.new()
+			picture.name = corner
+			picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			picture.stretch_mode = TextureRect.STRETCH_KEEP
+			if corner == "DecorRight":
+				# Pinned to the button's right-hand edge, whatever its width.
+				picture.anchor_left = 1.0
+				picture.anchor_right = 1.0
+			button.add_child(picture)
+
+
+## Gives every button the current season's two pictures, each one centred on its
+## corner so it sits half on the button and half off it.
+func _update_button_decorations() -> void:
+	var pictures := SeasonTheme.button_decorations(season)
+	for button in buttons_box.get_children():
+		for index in 2:
+			var picture := button.get_node(["DecorLeft", "DecorRight"][index]) as TextureRect
+			var texture: ImageTexture = pictures[index]
+			var size := texture.get_size()
+			picture.texture = texture
+			picture.offset_left = -size.x * 0.5
+			picture.offset_top = -size.y * 0.5
+			picture.offset_right = size.x * 0.5
+			picture.offset_bottom = size.y * 0.5
 
 
 # --- Buttons ---------------------------------------------------------------

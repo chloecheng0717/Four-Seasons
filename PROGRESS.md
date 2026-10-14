@@ -1243,7 +1243,7 @@ these exist yet.
 | `_garden_test.gd` | Automated regression suite (136 checks) for the Spring gardening mechanic, including used-up items being gone for good, the water needing both cats, carrying while stacked, the completion banner being the `Level Complete` picture rather than the old label, the `NextLevel` button sharing the completion screen (real `TextureButton`, right picture, **hidden and inert before the finish**, centre on screen, above the banner, unmoved by the reveal, **drawn at the picture's own size with a uniform scale so it cannot be stretched or squashed, and wholly inside the screen**), and the pause between the flower appearing and the banner turning up. |
 | `_next_level_test.gd` | **2026-10-14: Spring 1 now leads to Spring 2, so this runs with `-- --spring2-check` and expects `NEXT LEVEL REACHED SPRING 2`.** Automated end-to-end suite (20 checks) for the season transition: a real Spring run to the flower, the completion pause, the banner and Next Level button appearing together, the button's `pressed` being wired to the level's handler, and then pressing it — the scene change frees the test and the built Summer level proves the arrival by printing `NEXT LEVEL REACHED SUMMER` and quitting 0. Never presses the button if any earlier check failed. |
 | `_summer_test.gd` | Automated regression suite (**152 checks**) for Summer: the scene really is built and is not Spring, two dogs cropped to the dog art, the controls unchanged, sand on every tile, the sea is decoration only and drawn behind the level, three bins with three different pictures that do not touch, each standing on the ground with its artwork's bottom edge on the ground and centred over its own node, none drawn into a wall or on top of a dog, three pieces of rubbish each nearest its own bin, the completion screen and button hidden and inert at the start, dogs move/jump/face/stack on their own keys and can stack while carrying, **every piece of rubbish is really picked up by jumping for it from the shelf below it, solo and stacked**, **all six wrong-bin pairs are refused with a notice that clears itself**, each right bin sorts for good and the rubbish cannot be picked up again, and the completion screen only arrives after the third sort. The Next Level button is never pressed — pressing it would free the test — so its target is read from `NEXT_SCENE` instead. |
-| `scenes/TitleScreen.gd` | **2026-10-14: the background builders are `static` (`build_season`, `build_four_seasons`, `add_faller`, `move_fallers`), shared with the intro and the ending; Play loads `INTRO_SCENE`.** The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
+| `scenes/TitleScreen.gd` | **2026-10-14 (late): each menu button has two little seasonal pictures on its top corners** (`DecorLeft` / `DecorRight` `TextureRect`s, mouse-transparent, refilled from `SeasonTheme.button_decorations()` whenever the season changes); `show_season()` ignores the season already showing. **2026-10-14: the background builders are `static` (`build_season`, `build_four_seasons`, `add_faller`, `move_fallers`), shared with the intro and the ending; Play loads `INTRO_SCENE`.** The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
 | `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
 | `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
 | `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (no sounds exist yet; a sound put on those buses will follow the sliders). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
@@ -1831,7 +1831,7 @@ These cost real time during the fix and will mislead anyone testing again:
 
 **2026-10-14 - NEXT TASK: play the whole game by hand, title to ending.** Every
 season now has two levels, Play opens a story intro, and Winter 2 ends in an ending
-animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,329
+animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,333
 checks) and by real-renderer screenshots, but **nobody has played the new levels with
 a keyboard yet**. Things to watch for:
 1. **Spring 2:** is the stack for the water easy to find, and do the two cats really
@@ -1923,6 +1923,28 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-14 (late night) - Little seasonal details on the title buttons
+
+Asked for: small details on the main title's boxes - flowers, snow, autumn leaves,
+and starfish for summer.
+
+- Each of the four title buttons now has a small pixel picture centred on each of
+  its top corners, half on the button and half off: a pink and a yellow flower in
+  Spring, a coral and a yellow **starfish** in Summer, an orange and a red maple leaf
+  in Autumn, and blue snowflakes in Winter (blue, because white vanished on the pale
+  winter buttons). They change with the title's season as it cycles.
+- The pictures are text pictures in `SeasonTheme.gd` (`BUTTON_DECORATIONS`), drawn 4
+  screen pixels per art pixel by the same `picture_texture()` the panel frames now use.
+  At 4px they stick up 14px, exactly the gap between buttons, so they never touch the
+  button above. They ignore the mouse, so they cannot block a click.
+- **Found on the way:** `TitleScreen.show_season()` called with the season already on
+  show faded that layer in over itself and then hid it, leaving a white background. The
+  game never does this (the timer always moves on), but it is now guarded.
+- **Tests:** 12 suites, **1,333 checks, 0 failures** - the menus suite checks every title
+  button carries its season's two pictures centred on its corners, that they change with
+  the season, that they ignore the mouse, and the `show_season()` guard.
+- Real-renderer captures of the title in all four seasons looked right (probes deleted).
 
 ### 2026-10-14 (night) - Menu boxes in their season's style
 

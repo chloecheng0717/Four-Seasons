@@ -262,9 +262,89 @@ const DECORATIONS := {
 ## What the numbers in the decorations mean in each season.
 const DECORATION_COLOURS := {
 	"spring": {"1": Color("f28db2"), "2": Color("ffd84d"), "5": Color("4f9a3f")},
-	"summer": {"1": Color("ffd23f"), "2": Color("f39c12"), "3": Color("3fa7d6"), "4": Color("1e6fa8")},
+	"summer": {"1": Color("ffd23f"), "2": Color("f39c12"), "3": Color("3fa7d6"), "4": Color("1e6fa8"),
+		"5": Color("ff7b5c"), "6": Color("c94f3a")},
 	"autumn": {"1": Color("e8762b"), "2": Color("7a3e14"), "3": Color("c8452b"), "4": Color("f2b134")},
 	"winter": {"1": Color("ffffff"), "2": Color("8fc3ee"), "3": Color("5d9fd6")},
+}
+
+# --- The little decorations on the title screen's buttons -------------------
+#
+# Each title button gets one small picture on its top-left corner and another on
+# its top-right corner, half on the button and half off it, in the colours above.
+# They are drawn BUTTON_DECORATION_SCALE screen pixels per art pixel.
+
+const BUTTON_DECORATION_SCALE := 4
+
+const SMALL_FLOWER := [
+	"..111..",
+	".11111.",
+	"1112111",
+	"1122211",
+	"1112111",
+	".11111.",
+	"..111..",
+]
+const SMALL_YELLOW_FLOWER := [
+	"..222..",
+	".22222.",
+	"2221222",
+	"2211122",
+	"2221222",
+	".22222.",
+	"..222..",
+]
+const STARFISH := [
+	"...5...",
+	"..555..",
+	"5555555",
+	".55655.",
+	".55.55.",
+	"5.....5",
+]
+const YELLOW_STARFISH := [
+	"...1...",
+	"..111..",
+	"1111111",
+	".11211.",
+	".11.11.",
+	"1.....1",
+]
+const MINI_LEAF := [
+	"...1...",
+	".1.1.1.",
+	".11111.",
+	"1111111",
+	".11211.",
+	"...2...",
+	"...2...",
+]
+const MINI_RED_LEAF := [
+	"...3...",
+	".3.3.3.",
+	".33333.",
+	"3333333",
+	".33233.",
+	"...2...",
+	"...2...",
+]
+## Blue, not white: a white snowflake would vanish on a pale winter button.
+const SNOWFLAKE := [
+	"...3...",
+	".3.3.3.",
+	"..323..",
+	"3332333",
+	"..323..",
+	".3.3.3.",
+	"...3...",
+]
+
+## [top-left picture, top-right picture] for each season.
+const BUTTON_DECORATIONS := {
+	"spring": [SMALL_FLOWER, SMALL_YELLOW_FLOWER],
+	"summer": [STARFISH, YELLOW_STARFISH],
+	"autumn": [MINI_LEAF, MINI_RED_LEAF],
+	"winter": [SNOWFLAKE, SNOWFLAKE],
 }
 
 
@@ -406,14 +486,29 @@ static func frame_texture(season: String) -> ImageTexture:
 					var row: String = art[top + y]
 					art[top + y] = row.substr(0, left + x) + line[x] + row.substr(left + x + 1)
 
-	var size := FRAME.size()
-	var image := Image.create_empty(size * PIXEL_SCALE, size * PIXEL_SCALE, false, Image.FORMAT_RGBA8)
-	for y in size:
-		for x in size:
-			var key: String = art[y][x]
-			if colours.has(key):
-				image.fill_rect(Rect2i(x * PIXEL_SCALE, y * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE),
-					colours[key])
+	return picture_texture(art, colours, PIXEL_SCALE)
+
+
+## The two little pictures for the title buttons in this season, ready to draw:
+## [top-left, top-right].
+static func button_decorations(season: String) -> Array[ImageTexture]:
+	var textures: Array[ImageTexture] = []
+	for picture in BUTTON_DECORATIONS[season]:
+		textures.append(picture_texture(picture, DECORATION_COLOURS[season], BUTTON_DECORATION_SCALE))
+	return textures
+
+
+## Turns one of the text pictures into a texture: every character that has a colour
+## becomes a `scale` x `scale` square of it, and everything else is see-through.
+static func picture_texture(picture: Array, colours: Dictionary, scale: int) -> ImageTexture:
+	var height := picture.size()
+	var width := String(picture[0]).length()
+	var image := Image.create_empty(width * scale, height * scale, false, Image.FORMAT_RGBA8)
+	for y in height:
+		var line: String = picture[y]
+		for x in width:
+			if colours.has(line[x]):
+				image.fill_rect(Rect2i(x * scale, y * scale, scale, scale), colours[line[x]])
 	return ImageTexture.create_from_image(image)
 
 

@@ -237,6 +237,14 @@ func _test_title_screen() -> void:
 		and title.season_layers["summer"].modulate.a == 0.0)
 	_check("the badge says Spring · Cats", title.badge.text == "Spring · Cats")
 	_check("the menu is in Spring's colours", _primary_colour(title.ui_root) == SeasonTheme.MAIN["spring"])
+	_check("every title button has Spring's two little decorations on its top corners",
+		_title_decorations_are(title, "spring"))
+	_check("the decorations cannot block a click on the button",
+		_title_decorations_ignore_the_mouse(title))
+	title.show_season("spring")
+	await _frames(2)
+	_check("showing the season already on show keeps its background",
+		title.season_layers["spring"].modulate.a == 1.0 and title.season_layers["spring"].visible)
 
 	# Let the timer run out and the next season fade in on its own.
 	title._season_timer = 0.05
@@ -247,6 +255,8 @@ func _test_title_screen() -> void:
 		and title.season_layers["spring"].modulate.a == 0.0)
 	_check("the badge now says Summer · Dogs", title.badge.text == "Summer · Dogs")
 	_check("the menu changed to Summer's colours", _primary_colour(title.ui_root) == SeasonTheme.MAIN["summer"])
+	_check("and the button decorations changed to Summer's starfish",
+		_title_decorations_are(title, "summer"))
 	title.show_season("autumn")
 	title.show_season("winter")
 	title.show_season("spring")
@@ -290,6 +300,34 @@ func _test_title_screen() -> void:
 	_reset_settings()
 	title.queue_free()
 	await _frames(2)
+
+
+## True when every title button carries exactly this season's two pictures, one
+## centred on each top corner.
+func _title_decorations_are(title: TitleScreen, season: String) -> bool:
+	var expected := SeasonTheme.button_decorations(season)
+	for button in title.buttons_box.get_children():
+		for index in 2:
+			var picture := button.get_node_or_null(["DecorLeft", "DecorRight"][index]) as TextureRect
+			if picture == null or picture.texture == null:
+				return false
+			if picture.texture.get_image().get_data() != expected[index].get_image().get_data():
+				return false
+			# Centred on its corner: the corner is the middle of the picture.
+			var corner_x := 0.0 if index == 0 else (button as Control).size.x
+			var centre := picture.position + picture.size * 0.5
+			if not centre.is_equal_approx(Vector2(corner_x, 0.0)):
+				return false
+	return true
+
+
+func _title_decorations_ignore_the_mouse(title: TitleScreen) -> bool:
+	for button in title.buttons_box.get_children():
+		for corner in ["DecorLeft", "DecorRight"]:
+			var picture := button.get_node_or_null(corner) as Control
+			if picture == null or picture.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+				return false
+	return true
 
 
 # --- 4. The pause menu in every level ---------------------------------------

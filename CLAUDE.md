@@ -50,8 +50,10 @@ parallel. New test harnesses go in `tests/`.
   Autumn 1 / Winter 1 one screen; the original long Autumn and Winter are now level 2),
   a five-page story intro, an ending (recap with each season's SDG fact, then a
   four-season finale), Enter = Next Level, a pixel font, and menu boxes styled to
-  each season (pixel-art frames with flowers / sun and waves / leaves / snow).
-- Tests: 12 suites (the chain suite runs as 7 legs), **1,329 checks, 0 failures**
+  each season (pixel-art frames with flowers / sun and waves / leaves / snow), and
+  little seasonal pictures on the title buttons' corners (flowers, starfish, leaves,
+  snowflakes).
+- Tests: 12 suites (the chain suite runs as 7 legs), **1,333 checks, 0 failures**
   (2026-10-14).
 - Known, pre-existing: the Winter suite prints leak warnings at exit (PROGRESS §7). It
   still passes; don't suppress the warnings.
