@@ -270,31 +270,33 @@ const FRAME_SCENE := preload("res://scenes/LeafFrame.tscn")
 ## closes the loop. See PROGRESS.md.
 const NEXT_SCENE := "res://scenes/WinterLevel.tscn"
 
-## --- Autumn 2 -----------------------------------------------------------------
-## Autumn has two levels, and both use this script. Level 1 is AutumnLevel.tscn,
-## the long walk above. Level 2 is AutumnLevel2.tscn, which sets `stage = 2` and
-## gets the tables below instead: a short level that fits on one screen, with
-## three leaves and three frames. Level 1's tables above are left exactly as they
-## were.
+## --- Autumn 1 and Autumn 2 -----------------------------------------------------
+## Autumn has two levels, and both use this script. Every season goes short level
+## first, long level second, so:
+## - Level 1 is AutumnLevel.tscn (`stage` 1): a short level that fits on one
+##   screen, with three leaves and three frames. It is built from the STAGE_1_
+##   tables below.
+## - Level 2 is AutumnLevel2.tscn (`stage = 2`): the long walk, built from the
+##   tables above, which are exactly what they always were.
 ##
 ## The Next Level button of level 1 goes to level 2, and level 2's goes to Winter
 ## (NEXT_SCENE, which still means "the next season").
 const STAGE_2_SCENE := "res://scenes/AutumnLevel2.tscn"
 
 ## One screen: 20 columns of 64px.
-const STAGE_2_WIDTH := 1280
-const STAGE_2_COLUMN_COUNT := 20
+const STAGE_1_WIDTH := 1280
+const STAGE_1_COLUMN_COUNT := 20
 
 ## [row, first column, how many columns]. A low shelf (top at y 448) and, next
 ## to it, a high shelf (top at y 336), sharing an edge, on the left half of the
 ## screen. The right half is open floor for the frames.
-const STAGE_2_PLATFORM_ROWS := [
+const STAGE_1_PLATFORM_ROWS := [
 	[8, 5, 3],     # low shelf     x 320..512   surface 448
 	[6, 8, 3],     # high shelf    x 512..704   surface 336
 ]
 
-## [x] - decoration only, as in level 1.
-const STAGE_2_TREES := [40.0, 260.0]
+## [x] - decoration only, as in the long level.
+const STAGE_1_TREES := [40.0, 260.0]
 
 ## The three leaves. A fox sweeps its body from S-52 up to about S-186 when it
 ## jumps from a surface at y = S, and a fox on its friend's head reaches about
@@ -305,7 +307,7 @@ const STAGE_2_TREES := [40.0, 260.0]
 ## - Leaf 2 (box 108..140) is above the high shelf (336), where one jump only
 ##   reaches 150. It takes two: one fox on the other's head. Its box is 32px, like
 ##   Spring's water, which leaves a clear margin either way.
-const STAGE_2_LEAVES := [
+const STAGE_1_LEAVES := [
 	{
 		"kind": &"leaf1",
 		"texture": preload("res://assets/Autumn/Leaf1.png"),
@@ -331,7 +333,7 @@ const STAGE_2_LEAVES := [
 ## drawn about 174px wide, so they just clear each other and the right-hand
 ## wall, and their 84px boxes leave 96px of floor between them: more than a
 ## fox's 60px, so a fox can never be in two at once. Again not in leaf order.
-const STAGE_2_FRAMES := [
+const STAGE_1_FRAMES := [
 	{
 		"frame": "Leaf_frame3",
 		"kind": &"leaf3",
@@ -348,11 +350,11 @@ const STAGE_2_FRAMES := [
 		"x": 1175.0,
 	},
 ]
-## Level 2's frames stand on the floor itself, not on a terrace.
-const STAGE_2_FRAME_Y := 560.0
+## The short level's frames stand on the floor itself, not on a terrace.
+const STAGE_1_FRAME_Y := 560.0
 
-## Which of Autumn's two levels this is. AutumnLevel.tscn leaves it at 1;
-## AutumnLevel2.tscn sets it to 2.
+## Which of Autumn's two levels this is: 1 is the short one, played first
+## (AutumnLevel.tscn leaves it at 1); 2 is the long one (AutumnLevel2.tscn).
 @export_range(1, 2) var stage: int = 1
 
 ## How long the Level Complete banner waits after the last leaf is placed, so the
@@ -401,8 +403,8 @@ var _placed: Dictionary = {}
 ## level and its frames cannot disagree about what "finished" means.
 var _required_kinds: Array[StringName] = []
 
-## The layout actually built. They start as level 1's tables, and _ready swaps
-## in level 2's when `stage` is 2.
+## The layout actually built. They start as the long level's tables, and _ready
+## swaps in the short level's when `stage` is 1.
 var level_width: int = LEVEL_WIDTH
 var world_columns: int = COLUMN_COUNT
 var platform_rows: Array = PLATFORM_ROWS
@@ -430,16 +432,16 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 
-	if stage == 2:
-		level_width = STAGE_2_WIDTH
-		world_columns = STAGE_2_COLUMN_COUNT
-		platform_rows = STAGE_2_PLATFORM_ROWS
-		tree_spots = STAGE_2_TREES
-		leaf_table = STAGE_2_LEAVES
-		frame_table = STAGE_2_FRAMES
+	if stage == 1:
+		level_width = STAGE_1_WIDTH
+		world_columns = STAGE_1_COLUMN_COUNT
+		platform_rows = STAGE_1_PLATFORM_ROWS
+		tree_spots = STAGE_1_TREES
+		leaf_table = STAGE_1_LEAVES
+		frame_table = STAGE_1_FRAMES
 		has_terrace = false
-		frame_y = STAGE_2_FRAME_Y
-	# The camera's limits are the world's own edges. Level 2 is exactly one
+		frame_y = STAGE_1_FRAME_Y
+	# The camera's limits are the world's own edges. Level 1 is exactly one
 	# screen wide, so its camera simply never moves.
 	camera.limit_right = level_width
 
@@ -762,3 +764,16 @@ func _on_next_level_pressed() -> void:
 		get_tree().change_scene_to_file(STAGE_2_SCENE)
 	else:
 		get_tree().change_scene_to_file(NEXT_SCENE)
+
+
+## Enter does the same as clicking the Next Level button, once the button is up.
+## It is an input action of its own (`next_level`, Enter and keypad Enter), so it
+## can be rebound in the editor like the other keys. Enter is also P2's jump, which
+## is harmless: during play the button is hidden and disabled, so this does
+## nothing until the level is finished. While the game is paused this level gets
+## no input at all, so Enter in the pause menu can never skip a level.
+func _unhandled_input(event: InputEvent) -> void:
+	if next_level_button.visible and not next_level_button.disabled \
+			and event.is_action_pressed(&"next_level"):
+		get_viewport().set_input_as_handled()
+		_on_next_level_pressed()

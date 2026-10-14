@@ -21,12 +21,14 @@ extends Node2D
 ## The legs cannot share a run, because each destination quits the moment it
 ## loads, which would stop the next leg from ever starting.
 ##
-## Why calling the handler counts as pressing the button: the suites for the
-## levels assert, separately, that the Next Level TextureButton's `pressed` signal
-## really is connected to this exact handler, and this file checks it again. So
-## invoking the handler runs precisely the code a real click runs. What this file
-## adds on top is the part those suites cannot check without freeing themselves:
-## that the scene change really happens, and that the destination really loads.
+## How the level is left: by pressing Enter, as a player would (2026-10-14). The
+## key goes in through Input.parse_input_event, exactly like a real key press, so
+## every leg proves the Enter shortcut really moves on to the next level. Clicking
+## the button runs the same handler; that the button's `pressed` signal is wired
+## to it is checked here too, and _next_level_test clicks it for real. What this
+## file adds on top is the part the level suites cannot check without freeing
+## themselves: that the scene change really happens, and that the destination
+## really loads.
 ##
 ## Before handing over it also checks the level's completion screen is genuinely up
 ## and the button genuinely pressable, so a handler invoked out of nowhere cannot
@@ -54,6 +56,8 @@ var source_name := ""
 var failures: Array[String] = []
 var _elapsed := 0.0
 var _handed_over := false
+## Seconds since Enter was pressed. See _process.
+var _since_press := 0.0
 var _finished := false
 
 
@@ -80,10 +84,21 @@ func _ready() -> void:
 
 ## Safety net. If the scene change never happens this test is still alive at the end
 ## of its own run, which is the failure the destination's quit cannot report.
+##
+## Once Enter has been pressed the scene should change within a frame or two, which
+## frees this test. Still being here 3 seconds later means the press did nothing,
+## and that is reported straight away instead of hanging until the runner's timeout.
 func _process(delta: float) -> void:
-	if _finished or _handed_over:
+	if _finished:
 		return
 	_elapsed += delta
+	if _handed_over:
+		_since_press += delta
+		if _since_press > 3.0:
+			_check("pressing Enter really moved on to the next level", false,
+				" still in %s %.1fs after the press" % [source_name, _since_press])
+			_finish(false)
+		return
 	if _elapsed > 90.0:
 		_check("the scene change actually happened", false,
 			" still running after %.0fs, so nothing was ever loaded" % _elapsed)
@@ -125,12 +140,18 @@ func _gather() -> void:
 	_check("finishing really did put the completion screen up",
 		banner.visible and button.visible and not button.disabled,
 		" banner=%s button=%s disabled=%s" % [banner.visible, button.visible, button.disabled])
-	_check("and the button really is wired to the handler this test calls",
+	_check("and the button really is wired to the level's Next Level handler",
 		button.pressed.is_connected(level._on_next_level_pressed))
 
-	_emit("-- pressing Next Level --")
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.physical_keycode = KEY_ENTER
+	enter.pressed = true
+	_check("Enter is the next_level key", InputMap.event_is_action(enter, &"next_level"))
+
+	_emit("-- pressing Enter --")
 	_handed_over = true
-	level._on_next_level_pressed()
+	Input.parse_input_event(enter)
 
 
 ## Waits real time, in physics frames, so the level's own timers can run.

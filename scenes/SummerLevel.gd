@@ -605,3 +605,16 @@ func _on_next_level_pressed() -> void:
 		get_tree().change_scene_to_file(STAGE_2_SCENE)
 	else:
 		get_tree().change_scene_to_file(NEXT_SCENE)
+
+
+## Enter does the same as clicking the Next Level button, once the button is up.
+## It is an input action of its own (`next_level`, Enter and keypad Enter), so it
+## can be rebound in the editor like the other keys. Enter is also P2's jump, which
+## is harmless: during play the button is hidden and disabled, so this does
+## nothing until the level is finished. While the game is paused this level gets
+## no input at all, so Enter in the pause menu can never skip a level.
+func _unhandled_input(event: InputEvent) -> void:
+	if next_level_button.visible and not next_level_button.disabled \
+			and event.is_action_pressed(&"next_level"):
+		get_viewport().set_input_as_handled()
+		_on_next_level_pressed()

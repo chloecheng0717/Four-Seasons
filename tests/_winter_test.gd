@@ -5,7 +5,7 @@ extends Node2D
 ## penguin walks under them, the both-players reset, the igloo that needs BOTH
 ## penguins, and the completion screen.
 ##
-## It builds the real WinterLevel.tscn exactly as the game does and drives it with
+## It builds the real WinterLevel2.tscn (the long level, Winter 2) exactly as the game does and drives it with
 ## simulated input, in the same style as _garden_test, _summer_test and
 ## _autumn_test. Everything asserted here is read out of the live level, so a check
 ## cannot pass just because the level was never really built.
@@ -14,9 +14,10 @@ extends Node2D
 ## at the start; the icicle checks run while there are six hanging; the igloo checks
 ## run last, because finishing the level is irreversible.
 
-const WINTER_SCENE := "res://scenes/WinterLevel.tscn"
+## The long Winter level this suite tests. Since 2026-10-14 every season goes short
+## level first, so the long frozen corridor is Winter 2, in WinterLevel2.tscn.
+const WINTER_SCENE := "res://scenes/WinterLevel2.tscn"
 const SPRING_SCENE := "res://scenes/Level.tscn"
-const WINTER2_SCENE := "res://scenes/WinterLevel2.tscn"
 const ENDING_SCENE := "res://scenes/Ending.tscn"
 
 const SNOW_TEXTURE := preload("res://assets/Winter/Snow Tile.png")
@@ -156,7 +157,7 @@ func _run() -> void:
 
 func _test_the_level_exists() -> void:
 	_emit("=== 1. the Winter level is a real scene that loads ===")
-	_check("WinterLevel.tscn exists and loads as a PackedScene",
+	_check("WinterLevel2.tscn (the long Winter level) exists and loads as a PackedScene",
 		ResourceLoader.exists(WINTER_SCENE)
 		and load(WINTER_SCENE) is PackedScene)
 	_check("and the script on it is the Winter level script",
@@ -1078,13 +1079,10 @@ func _test_the_completion_screen() -> void:
 	# The button is not pressed here - that would change the scene out from under
 	# this test. Where it would go is read from the level's own constant instead.
 	var constants: Dictionary = level.get_script().get_script_constant_map()
-	# 2026-10-14: Winter 1 now leads to Winter 2, and Winter 2 to the ending, which
-	# is where the Play again button takes the players back to Spring.
-	_check("and level 1 leads to Winter 2, which does exist",
-		level.get("stage") == 1
-		and constants.get("STAGE_2_SCENE") == WINTER2_SCENE
-		and ResourceLoader.exists(WINTER2_SCENE),
-		" stage=%s stage2=%s" % [level.get("stage"), constants.get("STAGE_2_SCENE")])
+	# 2026-10-14: this long level is Winter 2, the last level of the game, so it
+	# leads to the ending, which is where Play again takes the players back to Spring.
+	_check("this is Winter's second level, the last one before the ending",
+		level.get("stage") == 2, " stage=%s" % level.get("stage"))
 	_check("and after Winter 2 comes the ending, which does exist, so Winter is not a dead end",
 		constants.get("NEXT_SCENE") == ENDING_SCENE
 		and ResourceLoader.exists(ENDING_SCENE),

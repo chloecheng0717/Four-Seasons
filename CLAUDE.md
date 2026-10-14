@@ -34,7 +34,7 @@ P="C:/Users/Hp/Downloads/Four-Seasons"
 Suites (all must print `ALL CHECKS PASSED` or their arrival line):
 `_stack_walk_test`, `_stack_jump_test`, `_garden_test`, `_summer_test` (project root),
 `tests/_autumn_test`, `tests/_winter_test` (~41s, legitimately slow), `tests/_menus_test`,
-`tests/_level2_test`, `tests/_story_ending_test` (`-- --spring-check`),
+`tests/_new_levels_test`, `tests/_story_ending_test` (`-- --spring-check`),
 `_next_level_test` (`-- --spring2-check`), and `tests/_season_chain_test`, once per leg,
 named after the destination: `-- --summer-check`, `--summer2-check`, `--autumn-check`,
 `--autumn2-check`, `--winter-check`, `--winter2-check`, `--ending-check`. They can run in
@@ -42,13 +42,15 @@ parallel. New test harnesses go in `tests/`.
 
 ## Status
 - Flow: Title → Story intro → Spring 1 → Spring 2 → Summer 1 → Summer 2 → Autumn 1 →
-  Autumn 2 → Winter 1 → Winter 2 → Ending (Play again → Spring 1).
+  Autumn 2 → Winter 1 → Winter 2 → Ending (Play again → Spring 1). **Every season goes
+  short level first, long level second.** Enter moves on once Next Level is showing.
 - **2026-10-08:** title screen (now the main scene), a pause menu in every level, and
   a settings panel (music, sound, text size, fullscreen), each styled to its season.
-- **2026-10-14:** a second level per season (Spring 2 / Summer 2 long and scrolling,
-  Autumn 2 / Winter 2 one screen), a five-page story intro, and an ending (recap with
-  each season's SDG fact, then a four-season finale).
-- Tests: 12 suites (the chain suite runs as 7 legs), **1,299 checks, 0 failures**
+- **2026-10-14:** a new level per season (Spring 2 / Summer 2 long and scrolling,
+  Autumn 1 / Winter 1 one screen; the original long Autumn and Winter are now level 2),
+  a five-page story intro, an ending (recap with each season's SDG fact, then a
+  four-season finale), and Enter = Next Level.
+- Tests: 12 suites (the chain suite runs as 7 legs), **1,311 checks, 0 failures**
   (2026-10-14).
 - Known, pre-existing: the Winter suite prints leak warnings at exit (PROGRESS §7). It
   still passes; don't suppress the warnings.
@@ -66,13 +68,17 @@ parallel. New test harnesses go in `tests/`.
 | Always set `get_tree().paused = false` before `reload_current_scene()` / `change_scene_to_file()` | `paused` belongs to the tree and survives a scene change |
 | Volume sliders drive `Music` / `SFX` buses created in code | There is no audio yet; sounds added later only need the right bus |
 | Settings left out: slower icicles, shape patterns | The team asked for volume, text size and fullscreen only |
-| Level 2 = the same season script with `stage = 2` and `STAGE_2_*` tables, not a new script | One script per season (PROGRESS §10); level-1 consts untouched, so old tests still describe level 1 |
+| Both levels of a season = one script, `stage` 1/2 set on the scene; the new layout lives in `STAGE_2_*` (Spring, Summer) or `STAGE_1_*` (Autumn, Winter) tables | One script per season (PROGRESS §10); the original tables are untouched, so the old suites still describe the original levels |
+| File name and `stage` mean play order (`AutumnLevel.tscn` = Autumn 1, short) | Short first, long second; every arrival flag and `NEXT_SCENE` kept its meaning through the reorder |
+| Enter = Next Level is its own `next_level` action, only live while the button is up | Rebindable; Enter is also P2's jump, harmless because the button is hidden during play |
 | Level 1's Next Level → `STAGE_2_SCENE`; level 2's → `NEXT_SCENE` (still "the next season") | Keeps the existing chain assertions true |
 | Spring/Summer camera follows only when the level is wider than one screen | Level 1 must render exactly as before |
 | Level 2 banner/labels in a `UI` CanvasLayer, found by `%UniqueName` | They must not scroll away, and one script serves both layouts |
 | Story = intro + ending only, "the wheel of the year has stopped" | The team chose no per-level story cards; the thread ties the seasons together |
 | Ending recap shows the proposal's season-clear SDG facts | Partly closes the missing "season-clear fact" promise |
 | Intro, ending and title share `TitleScreen`'s static season builders | No copied drawing code |
+| Pixel font: Pixelify Sans (OFL), set once as `[gui] theme/custom_font` | Readable in full sentences for 7-12s; Press Start 2P is too wide. Licence file must stay beside the font |
+| Font import: antialiasing ON, hinting/sub-pixel OFF, `liga`/`clig` ligatures OFF | Not a strict-grid font, so no-AA breaks small text; its fi/fl ligatures look like "A" |
 
 ## Gotchas that cost time
 - A headless run that prints **nothing** has a parse error; it isn't slow. Use `--check-only`.
@@ -88,6 +94,8 @@ parallel. New test harnesses go in `tests/`.
 - The garden suite's pause-timing check can fail when all suites run in parallel (1.89s
   against 1.5s). It passes on its own.
 - Long heredocs with quotes break in this Bash tool. Write scripts to the scratchpad first.
+- Changing a label's designed font size can break the menus suite's text-size checks;
+  the in-level help size lives in its `HELP_SIZE` constant (18).
 - Asset names are easy to mistype: `Glass bin.png`, `Autumn Tile.png`, `Autumn_Tree.png`,
   `Snow Tile.png`, `Ice tile.png`. Winter tiles crop 64x64, the others 64x56.
 - More in `PROGRESS.md` §7 "Not bugs — gotchas when testing".

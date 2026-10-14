@@ -30,10 +30,13 @@ Title -> Story intro -> Spring 1 -> Spring 2 -> Summer 1 -> Summer 2 -> Autumn 1
       -> Autumn 2 -> Winter 1 -> Winter 2 -> Ending -> (Play again -> Spring 1)
 ```
 
-Level 2 of a season uses the **same script** as level 1 with `stage = 2` set on its
-scene, which swaps in that script's `STAGE_2_*` tables. Spring and Summer were one
-screen, so their second levels are long (3840px, scrolling); Autumn and Winter were
-long, so their second levels are short (one screen). The story is told in a five-page
+**Every season goes short level first, long level second.** Both levels of a season use
+the **same script**, with `stage` (1 or 2) set on each scene. Spring and Summer were one
+screen, so their new levels are the long level 2s (3840px, scrolling, built from
+`STAGE_2_*` tables). Autumn and Winter were long, so their new levels are the short
+level 1s (one screen, built from `STAGE_1_*` tables), and their original long levels are
+now Autumn 2 / Winter 2, in `AutumnLevel2.tscn` / `WinterLevel2.tscn`. **Enter moves on to
+the next level** once the Next Level button is up (2026-10-14, second entry in §9). The story is told in a five-page
 intro after Play and closed by the ending, which recaps each season with its SDG fact
 and then congratulates the players with all four seasons on screen at once.
 
@@ -95,10 +98,11 @@ frames in a row on a raised terrace at the right-hand end. See §2.3.
   identical in all three seasons, and unchanged by any of them.
 - Any finished season's completion screen shows the `Level Complete` picture and,
   with it, a clickable `Next Level` button that loads the next level.
-- **Second levels (2026-10-14):** Spring 2 (long meadow, the water needs a stack),
+- **New levels (2026-10-14):** Spring 2 (long meadow, the water needs a stack),
   Summer 2 (long beach, six pieces of rubbish, bins in the middle that take two
-  each), Autumn 2 (one screen, three leaves, three frames on the floor) and Winter 2
-  (one screen, two icicles, two fish, the igloo).
+  each), Autumn 1 (one screen, three leaves, three frames on the floor) and Winter 1
+  (one screen, two icicles, two fish, the igloo). The original Autumn and Winter
+  levels are now Autumn 2 and Winter 2.
 - **Story intro and ending (2026-10-14):** `StoryIntro.tscn` after Play, and
   `Ending.tscn` after Winter 2.
 
@@ -1005,6 +1009,18 @@ trick, for the same reason.
 
 ## 3. Current Assets
 
+**The game's font (2026-10-14):** `assets/fonts/PixelifySans.ttf` (Pixelify Sans,
+Google Fonts, SIL Open Font Licence - the licence is next to it as
+`PixelifySans-OFL.txt` and must stay with the font). It is set once as the project's
+default font (`project.godot` -> `[gui] theme/custom_font`), so every Label and Button
+uses it without any scene or script naming it. Import settings that matter, in
+`PixelifySans.ttf.import`: **antialiasing stays on (grayscale)** - the font is
+pixel-*styled*, not drawn on a strict pixel grid, so with antialiasing off small text
+breaks up ("2" looked like "8"); **hinting and sub-pixel positioning are off**, so
+glyphs sit on whole pixels; and **the `liga` / `clig` ligatures are switched off**
+(`opentype_features`), because its "fi" and "fl" ligatures look like a capital A ("fish"
+read as "Ash").
+
 **Assets are grouped by the level they belong to.** Everything that is only
 used by Spring lives in `assets/Spring/`; a file that any level would need
 lives loose in `assets/`. Reorganised 2026-09-30 — see §9. The rule for where a
@@ -1194,11 +1210,11 @@ these exist yet.
 | `tests/_menus_test.tscn` | Test scene: wraps `tests/_menus_test.gd`. Not part of the game. |
 | `scenes/SpringLevel2.tscn` | **Spring 2, 2026-10-14.** `Level.gd` with `stage = 2`: a 3840px meadow with a sky layer, a `Camera2D` limited to 0..3840, and the help labels, `LevelComplete` and `NextLevel` under a `UI` `CanvasLayer` so they stay on screen while it scrolls. Prints `NEXT LEVEL REACHED SPRING 2` under `--spring2-check`. |
 | `scenes/SummerLevel2.tscn` | **Summer 2, 2026-10-14.** `SummerLevel.gd` with `stage = 2`: a 3840px beach, `WrongBin`, `LevelComplete` and `NextLevel` under a `UI` `CanvasLayer`. `--summer2-check`. |
-| `scenes/AutumnLevel2.tscn` | **Autumn 2, 2026-10-14.** A copy of `AutumnLevel.tscn` with `stage = 2`, camera limit 1280 and its own goal line. `--autumn2-check`. |
-| `scenes/WinterLevel2.tscn` | **Winter 2, 2026-10-14.** A copy of `WinterLevel.tscn` with `stage = 2`, camera limit 1280, its own goal line, and a white outline on the help labels so they stay readable over the first icicle. `--winter2-check`. |
+| `scenes/AutumnLevel2.tscn` | **Autumn 2 - the original long Autumn level** (since the 2026-10-14 reorder). Same node tree as `AutumnLevel.tscn`, with `stage = 2` and camera limit 4800. `--autumn2-check`. **Since the reorder, `AutumnLevel.tscn` is Autumn 1, the short one-screen level** (`stage` 1, camera limit 1280). |
+| `scenes/WinterLevel2.tscn` | **Winter 2 - the original long Winter level** (since the 2026-10-14 reorder). Same node tree as `WinterLevel.tscn`, with `stage = 2` and camera limit 4800. `--winter2-check`. **Since the reorder, `WinterLevel.tscn` is Winter 1, the short one-screen level.** Both Winter scenes give the help labels a white outline so they stay readable over the first icicle. |
 | `scenes/StoryIntro.tscn` | **The story intro, 2026-10-14.** Play on the title loads it. A `Views` `Node2D` (the pictures, built in code) and a `UI` panel with the page text, the controls (last page only), Skip, a page counter and Next / Let's go!. |
 | `scenes/Ending.tscn` | **The ending, 2026-10-14.** Winter 2's Next Level loads it. `Seasons` (the recap scenes), `Finale` and `Confetti` (both built in code), and a `UI` layer with the recap caption, a skip hint, the finale panel (Congratulations!, Play again, Back to title) and a black `Fade`. `--ending-check`. |
-| `tests/_level2_test.tscn` | Test scene for `tests/_level2_test.gd`. Not part of the game. |
+| `tests/_new_levels_test.tscn` | Test scene for `tests/_new_levels_test.gd` (called `_level2_test` until the reorder). Not part of the game. |
 | `tests/_story_ending_test.tscn` | Test scene for `tests/_story_ending_test.gd`. Not part of the game. Needs `-- --spring-check`. |
 | `_diag.tscn` | A leftover physics-trace diagnostic. Not part of the game; see §7. |
 
@@ -1211,10 +1227,10 @@ these exist yet.
 | `scenes/Level.gd` | **2026-10-14: also Spring 2** (`stage`, `STAGE_2_*` tables, layout vars, `_follow_players` camera only when wider than one screen, `%LevelComplete` / `%NextLevel` unique-name lookups, `--spring-check` / `--spring2-check`). Builds the entire level procedurally from constants: ground, platforms, walls, players, and the garden (three items plus the pot). Holds `PLAYER_SPAWNS` (per-player actions/texture/crop/spawn) and `GARDEN_ITEMS`. Every frame it sorts the players by y to set `z_index` so the lower cat draws behind. `_ready()` forces the `NextLevel` button hidden and disabled so it cannot appear during gameplay. `_on_level_complete()` starts the `complete_banner_delay` countdown that reveals the `LevelComplete` banner; `_reveal_banner()` shows the banner and the `NextLevel` button together, and `_on_next_level_pressed()` loads Summer (`SUMMER_SCENE`). Also holds `PLATFORM_ROWS`, `GROUND_ROW`, `POT_POSITION`, `TILE_WIDTH/HEIGHT`. |
 | `scenes/SummerLevel.gd` | **2026-10-14: also Summer 2** (same pattern as `Level.gd`; finishes on the number of **pieces** sorted, not kinds; bins get `capacity` 2; `--summer-check` is an alias of `--next-level-check`, `--summer2-check`). Builds the whole Summer level in code from constants, the same way `Level.gd` builds Spring: sand ground (row 10, 20 columns, 3 rows) and three platform rows, the decorative sea, walls, two dogs, three pieces of rubbish and three bins **on the ground at y=560** (paper `(560,560)`, plastic `(860,560)`, glass `(1120,560)`). Holds `PLAYER_SPAWNS` (the dogs, cropped like the cats), `TRASH_ITEMS` (paper `(434,322)`, plastic bag `(752,200)`, glass bottle `(1136,230)`), `BINS` (each bin's kind, picture, crop and position), `PLATFORM_ROWS`, `wrong_bin_notice_time` (1.2s) and `complete_banner_delay` (1.5s, the same pause Spring uses). `_on_rubbish_sorted()` counts against the kinds taken from the bins themselves and calls `_finish_level()` on the last one; `_on_wrong_bin()` shows the `WrongBin` label and starts its timer; `_reveal_banner()` shows the banner and the Next Level button together; `_on_next_level_pressed()` loads `NEXT_SCENE`. **`NEXT_SCENE` is now `res://scenes/AutumnLevel.tscn`** — changed 2026-10-03, see §9. Also still quits 0 with `NEXT LEVEL REACHED SUMMER` under `--next-level-check`. |
 | `scenes/TrashBin.gd` | **2026-10-14: `capacity` (default 1) and `sorted_count`; `is_filled` once full.** One Summer bin. The sorting rule, and nothing else: exports `accepts_kind`, `bin_texture`, `art_region`, `display_height`; crops its own picture and anchors it **bottom edge to its node** (`sprite.offset = (0, -region.height * 0.5)`, the same anchor `Player.gd` uses — the sprite is centred, so the old `(-width * 0.5, -height)` offset drew the artwork a whole `display_height` above the ground and half a width to the left); polls overlapping players every frame and serves **every** dog in the box, not just the first (the same way `PlantPot.gd` does, so a dog that walks in already carrying the right thing is served, and a stacked pair is never missed). The right kind calls `Player.consume_carried()`, sets `is_filled` and emits `rubbish_sorted`; the wrong kind emits `wrong_bin` and **takes nothing**; an empty dog is ignored. `drawn_rect()` reports the artwork's real screen pixels, read from `sprite.get_rect()` through the sprite's global transform. **The bin node stays in the level either way.** |
-| `scenes/AutumnLevel.gd` | **2026-10-14: also Autumn 2** (`stage`, `STAGE_2_*`, no terrace in level 2, a leaf may set its own `pickup_size`, `--autumn2-check`). Builds the whole Autumn level in code from constants, the same way `Level.gd` and `SummerLevel.gd` do: 302 tiles of autumn ground, eleven shelves, the raised terrace at columns 60-74, walls, ten **decoration-only** trees, four leaves, four frames on the terrace and two foxes. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `TREES`, `LEAVES`, `FRAMES`, `FRAME_ART`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0` and `NEXT_SCENE = res://scenes/WinterLevel.tscn`. `_foxes_centre()` is the midpoint of the two foxes; `_follow_foxes(delta)` does the smoothing **itself** with `1 - exp(-8 * delta)` and assigns `roundf()` to the camera x — see §9, 2026-10-03, and do not revert that to engine `position_smoothing`. `_on_leaf_placed()` counts against the kinds declared in its own `FRAMES` table and calls `_finish_level()` on the last one; `_on_wrong_leaf()` shows the shared notice; `_reveal_banner()` shows the banner and the Next Level button together. Also prints `NEXT LEVEL REACHED AUTUMN` and quits 0 under `--autumn-check`. |
+| `scenes/AutumnLevel.gd` | **2026-10-14: both Autumn levels.** `stage` 1 is the short Autumn 1, built from the `STAGE_1_*` tables (no terrace; a leaf may set its own `pickup_size`); `stage` 2 is the long Autumn 2, built from the original tables, which the Autumn suite still reads. `--autumn-check` / `--autumn2-check` by stage; `_unhandled_input` sends Enter to `_on_next_level_pressed()` once the button is up. Builds the whole Autumn level in code from constants, the same way `Level.gd` and `SummerLevel.gd` do: 302 tiles of autumn ground, eleven shelves, the raised terrace at columns 60-74, walls, ten **decoration-only** trees, four leaves, four frames on the terrace and two foxes. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `TREES`, `LEAVES`, `FRAMES`, `FRAME_ART`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0` and `NEXT_SCENE = res://scenes/WinterLevel.tscn`. `_foxes_centre()` is the midpoint of the two foxes; `_follow_foxes(delta)` does the smoothing **itself** with `1 - exp(-8 * delta)` and assigns `roundf()` to the camera x — see §9, 2026-10-03, and do not revert that to engine `position_smoothing`. `_on_leaf_placed()` counts against the kinds declared in its own `FRAMES` table and calls `_finish_level()` on the last one; `_on_wrong_leaf()` shows the shared notice; `_reveal_banner()` shows the banner and the Next Level button together. Also prints `NEXT LEVEL REACHED AUTUMN` and quits 0 under `--autumn-check`. |
 | `scenes/LeafFrame.gd` | One Autumn leaf frame, and the Autumn sorting rule. Deliberately the same shape as `TrashBin.gd` rather than something new: an `Area2D` that watches which foxes are standing in it, decides, and hands the leaf's fate back through the same two callables. Exports `accepts_kind`, `frame_texture`, `art_region`, `leaf_texture`, `leaf_region` and the silhouette size. The right leaf calls `Player.consume_carried()`, draws itself scaled to the silhouette inside the frame and emits `leaf_placed`; anything else emits `wrong_leaf` and **takes nothing**. **There is no `Label` on this scene** — no number, no wording, no colour; the frame says nothing at all. **A refused leaf is not put back**, exactly as in Summer. |
 | `scenes/Player.gd` | All cat behaviour: input, gravity, jumping, coyote/buffer, floor snap, artwork, facing, the ride/stack system, and carrying one gardening item. Tuning constants at the top (`SPEED`, `GRAVITY`, `JUMP_VELOCITY`, `COYOTE_TIME`, `JUMP_BUFFER`, `SUPPORT_GRACE`, `RIDE_CATCH`, `PLAYER_LAYER`, `CARRIED_ICON_HEIGHT`). Carrying is only `carried_kind`, `drop_carried()`, `consume_carried()` and `_clear_carrying()` — the movement and ride code below them is untouched. |
-| `scenes/WinterLevel.gd` | **2026-10-14: also Winter 2** (`stage`, `STAGE_2_*`, `--winter2-check`); **`NEXT_SCENE` is now `res://scenes/Ending.tscn`**, reached from Winter 2. Builds the whole Winter level in code from constants, the same way the other three do: **265** tiles of snow, nine shelves, walls, six icicles, the igloo and two penguins. Twelve `ICE_PATCHES` covering 41 tiles (22 on the floor row, 19 on shelves), see §2.4. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `ICE_PATCHES`, `ICICLES`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0`, `RESET_PAUSE = 0.35` and `NEXT_SCENE = res://scenes/Level.tscn`. `_is_ice(column, row)` is read from the same `ICE_PATCHES` table the level is built from, so the picture a penguin sees and the surface it slides on cannot disagree. `_penguins_centre()` / `_follow_penguins()` are Autumn's camera, borrowed unchanged — the smoothing is done in the level with `1 - exp(-8 * delta)` so the result can be `roundf()`d, see §9 and **do not revert that to engine `position_smoothing`**. `_on_icicle_hit()` waits `RESET_PAUSE` so the player sees the icicle land, then puts both penguins on their own spawns, resets every icicle, empties the igloo and snaps the camera home. `_on_penguins_at_igloo()` counts against the number of players the level itself built, so the two cannot disagree about what "finished" means, and **also requires `_collected_fish` to hold both indexes** - so Winter cannot be finished without collecting, and cannot be finished by skipping the level. It then uses the same 1.5s `complete_banner_delay` as every other season. **Builds the two fish** from `FISHES` (`_build_fish()`, `_fish_nodes`, `_on_fish_collected()`, `_required_fish()`) and resets them in `_on_icicle_hit()`'s existing reset path - see §2.4. Also prints `NEXT LEVEL REACHED WINTER` and quits 0 under `--winter-check`, which is the arrival hook `tests/_season_chain_test.gd` uses to prove Autumn -> Winter really happens; it has no effect on normal play. |
+| `scenes/WinterLevel.gd` | **2026-10-14: both Winter levels.** `stage` 1 is the short Winter 1 (`STAGE_1_*` tables), `stage` 2 is the long Winter 2 (the original tables). **`NEXT_SCENE` is now `res://scenes/Ending.tscn`**, reached from Winter 2. Enter = Next Level, as in every level script. Builds the whole Winter level in code from constants, the same way the other three do: **265** tiles of snow, nine shelves, walls, six icicles, the igloo and two penguins. Twelve `ICE_PATCHES` covering 41 tiles (22 on the floor row, 19 on shelves), see §2.4. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `ICE_PATCHES`, `ICICLES`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0`, `RESET_PAUSE = 0.35` and `NEXT_SCENE = res://scenes/Level.tscn`. `_is_ice(column, row)` is read from the same `ICE_PATCHES` table the level is built from, so the picture a penguin sees and the surface it slides on cannot disagree. `_penguins_centre()` / `_follow_penguins()` are Autumn's camera, borrowed unchanged — the smoothing is done in the level with `1 - exp(-8 * delta)` so the result can be `roundf()`d, see §9 and **do not revert that to engine `position_smoothing`**. `_on_icicle_hit()` waits `RESET_PAUSE` so the player sees the icicle land, then puts both penguins on their own spawns, resets every icicle, empties the igloo and snaps the camera home. `_on_penguins_at_igloo()` counts against the number of players the level itself built, so the two cannot disagree about what "finished" means, and **also requires `_collected_fish` to hold both indexes** - so Winter cannot be finished without collecting, and cannot be finished by skipping the level. It then uses the same 1.5s `complete_banner_delay` as every other season. **Builds the two fish** from `FISHES` (`_build_fish()`, `_fish_nodes`, `_on_fish_collected()`, `_required_fish()`) and resets them in `_on_icicle_hit()`'s existing reset path - see §2.4. Also prints `NEXT LEVEL REACHED WINTER` and quits 0 under `--winter-check`, which is the arrival hook `tests/_season_chain_test.gd` uses to prove Autumn -> Winter really happens; it has no effect on normal play. |
 | `scenes/Icicle.gd` | One icicle: four states (`HANGING`, `WARNING`, `FALLING`, `SPENT`), the shake, the fall and the one-shot hit. `WARNING_TIME = 0.9`, `FALL_GRAVITY = 1800`, `MAX_FALL_SPEED = 900`, `SHAKE_MAX = 5.0`, `SHAKE_HZ = 26.0`, `TRIGGER_WIDTH/HEIGHT = 150x160`. **The root and the ground zone never move** — only the inner `Moving` node is animated, and only it carries the hazard. `reset()` puts it back without a trigger ever being re-reported, and the state guards the start so a zone that is already being stood in cannot restart it. |
 | `scenes/Igloo.gd` | The Winter goal: crops and scales the igloo picture, and reports how many penguins are inside. It keeps its occupants in a **`Dictionary` keyed by body, not a counter**, so a penguin hovering on the edge cannot be counted twice and a stacked pair are both counted. No solid collider. Emits `penguins_changed(count)`. |
 | `scenes/GroundTile.gd` | Flips the tile sprite vertically when `buried` is true so the ground block looks filled in. Also applies the optional `surface_texture` / `surface_region` overrides, which is how Summer puts sand on the same tile scene, and the `slippery` flag Winter's ice sets. **All three default to Spring's values, so Spring, Summer and Autumn are unaffected.** |
@@ -1235,7 +1251,7 @@ these exist yet.
 | `tests/_menus_test.gd` | Automated suite (**255 checks** since 2026-10-14, when the pause menu checks were extended to all eight levels and Play to the intro) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
 | `scenes/StoryIntro.gd` | `class_name StoryIntro`. Five `PAGES` (text, picture, season colours). Pictures come from `TitleScreen.build_season` / `build_four_seasons`; the "year has stopped" page is the four seasons tinted grey. Next turns the page, Let's go! / Skip / Esc call `start_game()` (loads `Level.tscn`). A page turned mid-fade kills the running fade first, so a late callback can never hide the current picture. |
 | `scenes/Ending.gd` | `class_name Ending`. A recap of four beats (`BEAT_TIME` 5.5s), one per season from `RECAP` (achievement, SDG fact, goal), then `show_finale()`: four season columns, confetti in the season colours, Congratulations!, Play again (`Level.tscn`) and Back to title. Enter / Esc / a click skips to the finale. |
-| `tests/_level2_test.gd` | Automated suite (**131 checks, 4 sections**) for the four second levels: stage-2 layout and width, walls, floor, camera scrolls (long) or stays still (short), UI layer for the long levels, **every collectable really taken by its intended route and really not from the place its comment says is out of reach**, wrong targets refused, finishing only after the last item, and each level's next scene. |
+| `tests/_new_levels_test.gd` | Automated suite (**136 checks**, an Enter-key section + 4 levels) for the four new levels (Spring 2, Summer 2, Autumn 1, Winter 1): Enter is the `next_level` key and does nothing during play, the stage and its `STAGE_n_*` layout and width, walls, floor, camera scrolls (long) or stays still (short), UI layer for the long levels, **every collectable really taken by its intended route and really not from the place its comment says is out of reach**, wrong targets refused, finishing only after the last item, and each level's next scene. |
 | `tests/_story_ending_test.gd` | Automated suite (**45 checks**) for the intro and the ending; ends by pressing Let's go! for real, so Spring 1 prints `NEXT LEVEL REACHED SPRING`. Uses its own settings file. |
 | `_diag.gd` | Leftover one-off trace script used to debug the stacking bug. Prints a per-frame table and quits. Not part of the game. |
 | `tests/_winter_test.gd` | Automated regression suite (**140 checks, 12 sections**) for Winter. See §2.4 for what it covers. It reads its expectations back out of the level's own constants rather than hard-coding them, and it measures each tile's real opaque bounding box out of the PNG to prove no crop is cutting any of the artwork off — the check that catches a tile quietly losing its underside. Its fish checks derive the **real** jump rise from `Player.JUMP_VELOCITY` and `Player.GRAVITY` rather than trusting the nominal 128, and really jump for both fish rather than asserting coordinates. |
@@ -1264,6 +1280,12 @@ the editor without touching any script. The test suites verify all six work.
 at all: the penguins are the shared `Player` scene, so they move and jump on exactly
 the keys the cats, dogs and foxes do. In particular **no W/S aliases were added**,
 because unused bindings would show up in the rebinding screen for no reason.
+
+**Enter = Next Level (2026-10-14).** Once a level's completion screen is up, Enter (or
+keypad Enter) does the same as clicking the Next Level button. It is its own input action,
+`next_level`, so it can be rebound. Enter is also P2's jump, which is harmless: the
+button is hidden and disabled during play, and a paused level gets no input. The
+completion screen shows "or press Enter" above the button.
 
 **One extra use of jump in Spring:** standing at the pot carrying the wrong
 item, jump puts that item back where it was found. Nothing else about jumping
@@ -1640,7 +1662,7 @@ These cost real time during the fix and will mislead anyone testing again:
   `delta` timer, or wait physics frames, which are fixed at 60 per second.
 - **(2026-10-14) Do not compare against a node after it has been used up.** A
   sorted rubbish or placed leaf is `queue_free()`d; comparing a loop variable to
-  that freed node matched a different leaf in `_level2_test`. Count instead.
+  that freed node matched a different leaf in `_level2_test` (now `_new_levels_test`). Count instead.
 - **(2026-10-14) The garden suite's "it really did wait about as long as the pause
   asked for" check can fail under load** (1.89s measured against 1.5s while 17 runs
   shared the CPU). Run alone it passes at 1.54s. It is a wall-clock check, not a bug.
@@ -1809,19 +1831,21 @@ These cost real time during the fix and will mislead anyone testing again:
 
 **2026-10-14 - NEXT TASK: play the whole game by hand, title to ending.** Every
 season now has two levels, Play opens a story intro, and Winter 2 ends in an ending
-animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,299
+animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,311
 checks) and by real-renderer screenshots, but **nobody has played the new levels with
 a keyboard yet**. Things to watch for:
 1. **Spring 2:** is the stack for the water easy to find, and do the two cats really
    end up carrying soil and seeds together, or does one cat do all the trips?
 2. **Summer 2:** six pieces with the bins in the middle - fun, or too much walking?
    Is the Wrong bin! notice clear while the camera is moving?
-3. **Autumn 2 / Winter 2:** do they feel too short after the long first levels? Is the
-   Winter 2 walk home under the second icicle fair?
-4. **Story intro:** is it read, or skipped straight away? Is five pages too many?
-5. **Ending:** does the recap pace feel right (5.5s a season), and do the SDG facts
+3. **Autumn 1 / Winter 1 (the short ones, played first):** a good warm-up before the
+   long Autumn 2 / Winter 2? Is the Winter 1 walk home under the second icicle fair?
+4. **Enter for the next level:** does P2, whose jump is also Enter, ever skip a level
+   by accident as the completion screen appears?
+5. **Story intro:** is it read, or skipped straight away? Is five pages too many?
+6. **Ending:** does the recap pace feel right (5.5s a season), and do the SDG facts
    get read?
-6. Then the older checks below (Autumn camera seams, Winter fish routes) still apply.
+7. Then the older checks below (Autumn camera seams, Winter fish routes) still apply.
 
 **DONE: the Spring gardening mechanic**, **the items are now used up for good**
 rather than going back where they were found, and **completing Spring now goes
@@ -1899,6 +1923,68 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-14 (evening) - A pixel font for the whole game
+
+Asked for: "change the font of the whole game to become a pixel font".
+
+- **Font:** Pixelify Sans (OFL), chosen over Press Start 2P because it reads well in
+  full sentences (the story intro, the ending's facts, How to Play) - Press Start 2P is
+  so wide that the Summer goal line alone would run past 1,100px at the help size.
+  Downloaded from the google/fonts repository into a scratch folder, checked to be a
+  real TrueType file, then copied to `assets/fonts/` with its licence.
+- **Applied once**, as the project default font (`[gui] theme/custom_font`).
+  `SeasonTheme` sets only sizes, so every menu, label and button picked it up with no
+  other change.
+- **Found by looking, not by the suites:** with antialiasing off the font broke up at
+  small sizes, and its fi/fl ligatures drew like "A". Antialiasing is back on (grayscale)
+  and ligatures are off - see §3.
+- **The in-level help text went from 16 to 18px** in all eight level scenes (P1/P2 help
+  and the goal line), because this font's small x-height made 16px noticeably harder to
+  read than before. The longest goal line (Winter 1) still ends left of the Pause button.
+- **Tests:** 12 suites, **1,311 checks, 0 failures**. Only the menus suite needed a
+  change: its text-size checks had the help text's designed size (16) typed in; they now
+  read it from one `HELP_SIZE` constant (18).
+- **Real renderer:** title, How to Play, intro, a level, the pause settings panel, two
+  completion screens, the ending recap and finale were captured and looked right after
+  the two fixes (probe deleted).
+
+### 2026-10-14 (later) - Short level first in every season, and Enter for the next level
+
+Asked for straight after the first 2026-10-14 entry below was committed (`765e8f4`).
+
+**Short first, long second.** Spring and Summer already went short -> long. Autumn and
+Winter went long -> short, so for them the two layouts swapped places. File names and
+`stage` still mean *order*: `AutumnLevel.tscn` / `WinterLevel.tscn` are level 1 and
+`...Level2.tscn` are level 2, so every arrival flag (`--autumn-check` = arrive in
+Autumn 1, ...), every chain leg and every `NEXT_SCENE` kept its meaning and its value. What
+moved is the layout: in `AutumnLevel.gd` / `WinterLevel.gd` the short tables were
+renamed `STAGE_2_*` -> `STAGE_1_*` and are used when `stage == 1`, and the original long
+tables (untouched) now build `stage` 2. The two scene files of each season swapped their
+camera limit and goal line, nothing else. The big Autumn and Winter suites now load
+`AutumnLevel2.tscn` / `WinterLevel2.tscn`, since those hold the long levels they test.
+`tests/_level2_test` became `tests/_new_levels_test`, because two of the four levels it
+covers are now level 1s.
+
+**Enter = Next Level.** A new input action `next_level` (Enter, keypad Enter) in
+`project.godot`, and one small `_unhandled_input` in each of the four level scripts:
+when the Next Level button is visible and enabled, Enter calls `_on_next_level_pressed()`.
+Every level scene got an "or press Enter" label as a child of its Next Level button, so
+it appears with the button. The intro (Next has the keyboard) and the ending (Enter
+skips the recap, then presses the focused Play again) already moved on with Enter.
+
+**Tests:** 12 suites, **1,311 checks, 0 failures**. The chain test now presses **Enter**
+(through `Input.parse_input_event`) instead of calling the handler, so all seven legs
+prove the key really changes the scene (clicking stays covered by `_next_level_test`). It
+also fails 3 seconds after a press that goes nowhere: before, its watchdog switched off at
+the press, so a broken press hung until the runner's timeout - found by the negative
+check. `_new_levels_test` adds: `next_level` is exactly Enter + keypad Enter, and Enter
+during play leaves each new level alone. **Negative check:** with Winter's Enter handler
+disabled, the Winter 1 -> Winter 2 leg fails ("still in Winter 1 3.0s after the press");
+restored, it passes. Real-renderer captures of the Spring 1 and Autumn 1 completion
+screens show the hint readable above the arrow (probe deleted).
+
+**Not verified by hand**, like everything else from today - see §8.
 
 ### 2026-10-14 - A second level for every season, a story intro and an ending
 

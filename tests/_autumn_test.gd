@@ -4,7 +4,7 @@ extends Node2D
 ## side-scrolling map, the shared camera, the four leaves, the four visually
 ## matching frames, the wrong-frame refusal and the completion screen.
 ##
-## It builds the real AutumnLevel.tscn exactly as the game does and drives it with
+## It builds the real AutumnLevel2.tscn (the long level, Autumn 2) exactly as the game does and drives it with
 ## simulated input, in the same style as _garden_test and _summer_test. Everything
 ## asserted here is read out of the live level, so a check cannot pass just
 ## because the level was never really built.
@@ -14,6 +14,10 @@ extends Node2D
 ## is placed the level is finished and there is nothing left to carry.
 
 const AUTUMN_SCENE := "res://scenes/AutumnLevel.tscn"
+## The long Autumn level this suite tests. Since 2026-10-14 every season goes short
+## level first, so the long walk is Autumn 2, in AutumnLevel2.tscn. AUTUMN_SCENE is
+## still where Summer hands over to: Autumn 1, the short level.
+const AUTUMN_LONG_SCENE := "res://scenes/AutumnLevel2.tscn"
 const SPRING_SCENE := "res://scenes/Level.tscn"
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
 const WINTER_SCENE := "res://scenes/WinterLevel.tscn"
@@ -115,7 +119,7 @@ var _banner_on_place_frame := true
 
 
 func _ready() -> void:
-	level = (load(AUTUMN_SCENE) as PackedScene).instantiate()
+	level = (load(AUTUMN_LONG_SCENE) as PackedScene).instantiate()
 	add_child(level)
 	await get_tree().process_frame
 	_gather()

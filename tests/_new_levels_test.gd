@@ -1,13 +1,17 @@
 extends Node2D
 
-## Checks for the four second levels: Spring 2, Summer 2, Autumn 2 and Winter 2.
+## Checks for the four levels added on 2026-10-14: Spring 2, Summer 2, Autumn 1 and
+## Winter 1. Every season goes short level first, long level second, so the new
+## Spring and Summer levels are the long level 2s, and the new Autumn and Winter
+## levels are the short level 1s.
 ##
 ## Each one is built from its real scene file, exactly as the game builds it, and
 ## driven with the real controls. For every level this proves:
-##   1. it really is level 2 - the stage-2 layout, the right width, walls at both
-##      edges, and a camera whose limits are the world's own edges;
+##   1. it really is the right level - its stage, the layout from its STAGE_ tables,
+##      the right width, walls at both edges, and a camera whose limits are the
+##      world's own edges;
 ##   2. the camera scrolls in the long levels (Spring 2, Summer 2) and stays still
-##      in the short ones (Autumn 2, Winter 2), and the completion screen of a long
+##      in the short ones (Autumn 1, Winter 1), and the completion screen of a long
 ##      level is in a UI layer so it cannot scroll away;
 ##   3. every collectable is reachable the way its table comment says it is - from a
 ##      shelf, or only by stacking - and NOT from the place that comment says it is
@@ -15,13 +19,16 @@ extends Node2D
 ##      jump, never by arithmetic;
 ##   4. bringing everything to its goal finishes the level, and nothing less does;
 ##   5. the completion screen comes up with the Next Level button wired to the
-##      level's handler, and the level knows which season comes next.
+##      level's handler, and the level knows which level comes next.
 ##
 ## The real press of each Next Level button is proven by tests/_season_chain_test,
 ## because pressing it here would change the scene out from under this test.
 
 const SPRING2_SCENE := "res://scenes/SpringLevel2.tscn"
 const SUMMER2_SCENE := "res://scenes/SummerLevel2.tscn"
+const AUTUMN1_SCENE := "res://scenes/AutumnLevel.tscn"
+const WINTER1_SCENE := "res://scenes/WinterLevel.tscn"
+## Where the two short level 1s lead: the long Autumn and Winter levels.
 const AUTUMN2_SCENE := "res://scenes/AutumnLevel2.tscn"
 const WINTER2_SCENE := "res://scenes/WinterLevel2.tscn"
 
@@ -62,10 +69,11 @@ func _process(delta: float) -> void:
 
 
 func _run() -> void:
+	_check_the_enter_key()
 	await _test_spring2()
 	await _test_summer2()
-	await _test_autumn2()
-	await _test_winter2()
+	await _test_autumn1()
+	await _test_winter1()
 	_finish(failures.is_empty())
 
 
@@ -76,7 +84,8 @@ func _test_spring2() -> void:
 	_emit("=== 1. Spring 2: the long meadow ===")
 	await _load(SPRING2_SCENE)
 	away = Vector2(150.0, GROUND_Y - 1.0)
-	_check_the_frame(SPRING_GD, "spring")
+	_check_the_frame(SPRING_GD, "spring", 2)
+	await _check_enter_waits_for_the_finish()
 	await _check_the_camera_scrolls()
 
 	var items := _children_of_type(level.garden, "GardenItem")
@@ -130,7 +139,8 @@ func _test_summer2() -> void:
 	_emit("=== 2. Summer 2: the long beach with six pieces of rubbish ===")
 	await _load(SUMMER2_SCENE)
 	away = Vector2(150.0, GROUND_Y - 1.0)
-	_check_the_frame(SUMMER_GD, "summer")
+	_check_the_frame(SUMMER_GD, "summer", 2)
+	await _check_enter_waits_for_the_finish()
 	await _check_the_camera_scrolls()
 
 	var pieces := _children_of_type(level.trash, "GardenItem")
@@ -209,14 +219,15 @@ func _test_summer2() -> void:
 	_emit("")
 
 
-# ------------------------------------------------------------------- Autumn 2
+# ------------------------------------------------------------------- Autumn 1
 
 
-func _test_autumn2() -> void:
-	_emit("=== 3. Autumn 2: one screen, three leaves, three frames ===")
-	await _load(AUTUMN2_SCENE)
+func _test_autumn1() -> void:
+	_emit("=== 3. Autumn 1: one screen, three leaves, three frames ===")
+	await _load(AUTUMN1_SCENE)
 	away = Vector2(1100.0, GROUND_Y - 1.0)
-	_check_the_frame(AUTUMN_GD, "autumn")
+	_check_the_frame(AUTUMN_GD, "autumn", 1)
+	await _check_enter_waits_for_the_finish()
 	await _check_the_camera_stays_still()
 
 	var leaves := _children_of_type(level.leaves, "GardenItem")
@@ -274,20 +285,20 @@ func _test_autumn2() -> void:
 		all_filled = all_filled and frame.is_filled
 	_check("every frame now holds its leaf", all_filled)
 	await _check_the_completion_screen()
-	_check("and after Autumn 2 comes Winter",
-		_const("NEXT_SCENE") == "res://scenes/WinterLevel.tscn"
-		and _const("STAGE_2_SCENE") == AUTUMN2_SCENE)
+	_check("and after Autumn 1 comes Autumn 2, the long walk",
+		_const("STAGE_2_SCENE") == AUTUMN2_SCENE and ResourceLoader.exists(AUTUMN2_SCENE))
 	_emit("")
 
 
-# ------------------------------------------------------------------- Winter 2
+# ------------------------------------------------------------------- Winter 1
 
 
-func _test_winter2() -> void:
-	_emit("=== 4. Winter 2: one screen, two icicles, two fish, the igloo ===")
-	await _load(WINTER2_SCENE)
+func _test_winter1() -> void:
+	_emit("=== 4. Winter 1: one screen, two icicles, two fish, the igloo ===")
+	await _load(WINTER1_SCENE)
 	away = Vector2(100.0, GROUND_Y - 1.0)
-	_check_the_frame(WINTER_GD, "winter")
+	_check_the_frame(WINTER_GD, "winter", 1)
+	await _check_enter_waits_for_the_finish()
 	await _check_the_camera_stays_still()
 
 	var fishes: Array = level._fish_nodes
@@ -349,9 +360,8 @@ func _test_winter2() -> void:
 	_park(p1, Vector2(igloo_x - 30.0, GROUND_Y - 1.0))
 	await _wait(10)
 	await _check_the_completion_screen()
-	_check("and after Winter 2 comes the ending",
-		_const("NEXT_SCENE") == "res://scenes/Ending.tscn"
-		and _const("STAGE_2_SCENE") == WINTER2_SCENE)
+	_check("and after Winter 1 comes Winter 2, the long way home",
+		_const("STAGE_2_SCENE") == WINTER2_SCENE and ResourceLoader.exists(WINTER2_SCENE))
 	_emit("")
 
 
@@ -385,15 +395,16 @@ func _load(path: String) -> void:
 	await _wait(10)
 
 
-## What every level 2 must be: stage 2, built from its STAGE_2 tables, walled at both
-## ends of its own width, with a camera clamped to that width and a pause menu in the
-## right season.
-func _check_the_frame(script: Script, season: String) -> void:
-	var width: int = script.get_script_constant_map()["STAGE_2_WIDTH"]
-	_check("it is level 2 of its season", level.stage == 2)
-	_check("it is built %dpx wide from its stage-2 tables" % width,
-		level.level_width == width
-		and level.platform_rows == script.get_script_constant_map()["STAGE_2_PLATFORM_ROWS"])
+## What every new level must be: the right stage, built from that stage's tables
+## (STAGE_1_* or STAGE_2_*), walled at both ends of its own width, with a camera
+## clamped to that width and a pause menu in the right season.
+func _check_the_frame(script: Script, season: String, stage: int) -> void:
+	var tables := script.get_script_constant_map()
+	var prefix := "STAGE_%d_" % stage
+	var width: int = tables[prefix + "WIDTH"]
+	_check("it is level %d of its season" % stage, level.stage == stage)
+	_check("it is built %dpx wide from its %s tables" % [width, prefix],
+		level.level_width == width and level.platform_rows == tables[prefix + "PLATFORM_ROWS"])
 	_check("the camera's limits are the world's own edges",
 		level.camera.limit_left == 0 and level.camera.limit_right == width)
 	var walls: Array = level.walls.get_children()
@@ -418,6 +429,38 @@ func _check_the_frame(script: Script, season: String) -> void:
 	_check("both players start on the floor at the left",
 		p1.global_position.x < 300.0 and p2.global_position.x < 300.0
 		and absf(p1.global_position.y - GROUND_Y) < 3.0)
+
+
+## Enter and keypad Enter are the next_level key, and nothing else is.
+func _check_the_enter_key() -> void:
+	_emit("=== 0. the Enter key ===")
+	var keys: Array[int] = []
+	for event in InputMap.action_get_events(&"next_level"):
+		if event is InputEventKey:
+			keys.append((event as InputEventKey).physical_keycode)
+	_check("there is a next_level action, on Enter and keypad Enter",
+		InputMap.has_action(&"next_level") and keys.size() == 2
+		and keys.has(KEY_ENTER) and keys.has(KEY_KP_ENTER), " keys=%s" % str(keys))
+	_emit("")
+
+
+## Enter is also P2's jump, so pressing it during play must only make P2 jump. If it
+## moved on to the next level instead, the scene change would free this test and the
+## run would end with no verdict at all - which the runner reports as a failure.
+func _check_enter_waits_for_the_finish() -> void:
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.physical_keycode = KEY_ENTER
+	enter.pressed = true
+	Input.parse_input_event(enter)
+	await _wait(6)
+	var release := enter.duplicate() as InputEventKey
+	release.pressed = false
+	Input.parse_input_event(release)
+	await _wait(30)
+	_check("Enter during play does not leave the level",
+		is_instance_valid(level) and level.is_inside_tree()
+		and not level.next_level_button.visible)
 
 
 func _check_the_camera_scrolls() -> void:

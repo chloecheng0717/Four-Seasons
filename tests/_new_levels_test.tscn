@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/_new_levels_test.gd" id="1_new_levels"]
+
+[node name="NewLevelsTest" type="Node2D"]
+script = ExtResource("1_new_levels")

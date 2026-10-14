@@ -27,6 +27,9 @@ const LEVEL_2S := {
 	"winter": preload("res://scenes/WinterLevel2.tscn"),
 }
 const TEST_SETTINGS_PATH := "user://_menus_test_settings.cfg"
+## The in-level help text's designed size. 16 until 2026-10-14, when the pixel font
+## arrived and the help text went up to 18 to stay as readable as before.
+const HELP_SIZE := 18
 
 var failures: Array[String] = []
 var _real_save_path := ""
@@ -410,17 +413,19 @@ func _test_text_size() -> void:
 	await _frames(3)
 	var help := level.get_node("P1Help") as Label
 	_check("a level that is not the running game keeps its designed text size",
-		help.get_theme_font_size("font_size") == 16, " size=%d" % help.get_theme_font_size("font_size"))
+		help.get_theme_font_size("font_size") == HELP_SIZE, " size=%d" % help.get_theme_font_size("font_size"))
 
 	# Applying it scales from the designed size every time, never compounding.
 	GameSettings.apply_text_scale(level)
-	_check("text size 1.5 makes 16pt help text 24pt", help.get_theme_font_size("font_size") == 24)
+	_check("text size 1.5 makes the help text 1.5 times its designed size",
+		help.get_theme_font_size("font_size") == roundi(HELP_SIZE * 1.5))
 	GameSettings.apply_text_scale(level)
-	_check("applying it twice does not grow it again", help.get_theme_font_size("font_size") == 24)
+	_check("applying it twice does not grow it again",
+		help.get_theme_font_size("font_size") == roundi(HELP_SIZE * 1.5))
 	GameSettings.text_scale = 0.8
 	GameSettings.apply_text_scale(level)
 	_check("making it smaller works from the designed size too",
-		help.get_theme_font_size("font_size") == roundi(16 * 0.8))
+		help.get_theme_font_size("font_size") == roundi(HELP_SIZE * 0.8))
 	var bin_label := level.find_child("BinLabel", true, false) as Label
 	_check("labels the level built in code are scaled as well",
 		bin_label != null and bin_label.has_meta(GameSettings.BASE_SIZE_META))

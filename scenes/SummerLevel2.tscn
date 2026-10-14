@@ -48,7 +48,7 @@ offset_top = 12.0
 offset_right = 464.0
 offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "P1   A / D  move      Space  jump"
 
 [node name="P2Help" type="Label" parent="UI"]
@@ -57,7 +57,7 @@ offset_top = 38.0
 offset_right = 504.0
 offset_bottom = 62.0
 theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "P2   Left / Right  move      Enter  jump"
 
 [node name="GoalHelp" type="Label" parent="UI"]
@@ -66,7 +66,7 @@ offset_top = 66.0
 offset_right = 860.0
 offset_bottom = 90.0
 theme_override_colors/font_color = Color(0.16, 0.16, 0.16, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 text = "Summer 2: six pieces of rubbish on the long beach. Sort them all into the bins in the middle."
 
 [node name="WrongBin" type="Label" parent="UI"]
@@ -107,3 +107,17 @@ texture_normal = ExtResource("3_next_texture")
 
 [node name="PauseMenu" parent="." instance=ExtResource("4_pause_menu")]
 season = "summer"
+
+[node name="EnterHint" type="Label" parent="UI/NextLevel"]
+layout_mode = 0
+offset_left = -22.0
+offset_top = -26.0
+offset_right = 218.0
+offset_bottom = 0.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.23, 0.45, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+text = "or press Enter"
+horizontal_alignment = 1

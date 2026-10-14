@@ -322,61 +322,63 @@ const ICICLES := [
 ## what takes them back to Spring.
 const NEXT_SCENE := "res://scenes/Ending.tscn"
 
-## --- Winter 2 -----------------------------------------------------------------
-## Winter has two levels, and both use this script. Level 1 is WinterLevel.tscn,
-## the long frozen corridor above. Level 2 is WinterLevel2.tscn, which sets
-## `stage = 2` and gets the tables below instead: a short level that fits on one
-## screen, with the same rules - two icicles, two fish, and the igloo, which only
-## counts once both fish are in and both penguins are standing in it. Level 1's
-## tables above are left exactly as they were.
+## --- Winter 1 and Winter 2 -----------------------------------------------------
+## Winter has two levels, and both use this script. Every season goes short level
+## first, long level second, so:
+## - Level 1 is WinterLevel.tscn (`stage` 1): a short level that fits on one
+##   screen, with the same rules as the long one - two icicles, two fish, and the
+##   igloo, which only counts once both fish are in and both penguins are standing
+##   in it. It is built from the STAGE_1_ tables below.
+## - Level 2 is WinterLevel2.tscn (`stage = 2`): the long frozen corridor, built
+##   from the tables above, which are exactly what they always were.
 ##
 ## The Next Level button of level 1 goes to level 2, and level 2's goes to the
 ## ending (NEXT_SCENE).
 const STAGE_2_SCENE := "res://scenes/WinterLevel2.tscn"
 
 ## One screen: 20 columns of 64px.
-const STAGE_2_WIDTH := 1280
-const STAGE_2_COLUMN_COUNT := 20
+const STAGE_1_WIDTH := 1280
+const STAGE_1_COLUMN_COUNT := 20
 
 ## [row, first column, how many columns]. A low shelf (top at y 448) and a high
 ## shelf (top at y 336) beside it, sharing an edge, in the middle of the screen.
 ## Nothing hangs over the two icicle corridors (x 400..500 and x 968..1064).
-const STAGE_2_PLATFORM_ROWS := [
+const STAGE_1_PLATFORM_ROWS := [
 	[8, 9, 3],     # low shelf     x 576..768   surface 448
 	[6, 12, 3],    # high shelf    x 768..960   surface 336
 ]
 
 ## [row, first column, how many columns]. One patch on the floor under the low
 ## shelf and one on the high shelf, and neither under an icicle.
-const STAGE_2_ICE_PATCHES := [
+const STAGE_1_ICE_PATCHES := [
 	[10, 9, 3],    # floor, under the low shelf   x 576..768   surface 560
 	[6, 13, 2],    # on the high shelf            x 832..960   surface 336
 ]
 
 ## Both fish have the bottom of their box at y 362, 198px above the floor, which
-## one jump from the floor (up to 374) cannot reach - the same height as level 1.
+## one jump from the floor (up to 374) cannot reach - the same height as the long level.
 ## - Fish 1 is above the low shelf (448), whose jump reaches up to 262: climb,
 ##   then jump.
 ## - Fish 2 is over open snow near the start, far from any shelf, so the only way
 ##   up is for one penguin to stand on the other's head and jump (that reaches
 ##   up to 322).
-const STAGE_2_FISHES := [
+const STAGE_1_FISHES := [
 	Vector2(640.0, 330.0),      # fish 1: above the low shelf
 	Vector2(230.0, 330.0),      # fish 2: over the snow near the start, stack required
 ]
 
 ## [x, artwork]. Icicle 1 is between the start and the shelves; icicle 2 is
 ## between the high shelf and the igloo, so the walk home passes under it.
-const STAGE_2_ICICLES := [
+const STAGE_1_ICICLES := [
 	[448.0, 1],
 	[1016.0, 1],
 ]
 
 ## On the floor at the right, clear of the second icicle and of the wall.
-const STAGE_2_IGLOO_POSITION := Vector2(1170.0, 560.0)
+const STAGE_1_IGLOO_POSITION := Vector2(1170.0, 560.0)
 
-## Which of Winter's two levels this is. WinterLevel.tscn leaves it at 1;
-## WinterLevel2.tscn sets it to 2.
+## Which of Winter's two levels this is: 1 is the short one, played first
+## (WinterLevel.tscn leaves it at 1); 2 is the long one (WinterLevel2.tscn).
 @export_range(1, 2) var stage: int = 1
 
 ## How long the Level Complete banner waits after the igloo is filled, so the two
@@ -434,8 +436,8 @@ var _spawn_positions: Array[Vector2] = []
 ## code and not read out of the scene.
 var igloo: Igloo = null
 
-## The layout actually built. They start as level 1's tables, and _ready swaps
-## in level 2's when `stage` is 2.
+## The layout actually built. They start as the long level's tables, and _ready
+## swaps in the short level's when `stage` is 1.
 var level_width: int = LEVEL_WIDTH
 var world_columns: int = COLUMN_COUNT
 var platform_rows: Array = PLATFORM_ROWS
@@ -461,15 +463,15 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 
-	if stage == 2:
-		level_width = STAGE_2_WIDTH
-		world_columns = STAGE_2_COLUMN_COUNT
-		platform_rows = STAGE_2_PLATFORM_ROWS
-		ice_patches = STAGE_2_ICE_PATCHES
-		fishes = STAGE_2_FISHES
-		icicle_table = STAGE_2_ICICLES
-		igloo_position = STAGE_2_IGLOO_POSITION
-	# The camera's limits are the world's own edges. Level 2 is exactly one
+	if stage == 1:
+		level_width = STAGE_1_WIDTH
+		world_columns = STAGE_1_COLUMN_COUNT
+		platform_rows = STAGE_1_PLATFORM_ROWS
+		ice_patches = STAGE_1_ICE_PATCHES
+		fishes = STAGE_1_FISHES
+		icicle_table = STAGE_1_ICICLES
+		igloo_position = STAGE_1_IGLOO_POSITION
+	# The camera's limits are the world's own edges. Level 1 is exactly one
 	# screen wide, so its camera simply never moves.
 	camera.limit_right = level_width
 
@@ -880,3 +882,16 @@ func _on_next_level_pressed() -> void:
 		get_tree().change_scene_to_file(STAGE_2_SCENE)
 	else:
 		get_tree().change_scene_to_file(NEXT_SCENE)
+
+
+## Enter does the same as clicking the Next Level button, once the button is up.
+## It is an input action of its own (`next_level`, Enter and keypad Enter), so it
+## can be rebound in the editor like the other keys. Enter is also P2's jump, which
+## is harmless: during play the button is hidden and disabled, so this does
+## nothing until the level is finished. While the game is paused this level gets
+## no input at all, so Enter in the pause menu can never skip a level.
+func _unhandled_input(event: InputEvent) -> void:
+	if next_level_button.visible and not next_level_button.disabled \
+			and event.is_action_pressed(&"next_level"):
+		get_viewport().set_input_as_handled()
+		_on_next_level_pressed()
