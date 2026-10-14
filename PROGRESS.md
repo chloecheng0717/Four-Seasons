@@ -1,6 +1,6 @@
 # PROGRESS — FourSeasons
 
-**Last updated:** 2026-10-14
+**Last updated:** 2026-10-15
 **Project root:** `C:\Users\Chloe Cheng\OneDrive\Documents\FourSeasons`
 **Engine:** Godot 4.7.2 stable (`4.7`, GL Compatibility renderer)
 
@@ -1174,8 +1174,8 @@ All seven PNGs have `.import` files and are imported by the engine.
 > **space**, and note the **capital T** in `Ice tile`. Easy to mistype, and a wrong
 > path fails to load rather than falling back.
 
-No background/sky art, no audio, no fonts beyond the Godot default. None of
-these exist yet.
+No background/sky art yet. The game's font is the bundled PixelifySans, and four
+sound effects now live in `assets/SoundEffects/` (see §9, 2026-10-15 (later)).
 
 ---
 
@@ -1246,9 +1246,11 @@ these exist yet.
 | `scenes/TitleScreen.gd` | **2026-10-14 (late): each menu button has two little seasonal pictures on its top corners** (`DecorLeft` / `DecorRight` `TextureRect`s, mouse-transparent, refilled from `SeasonTheme.button_decorations()` whenever the season changes); `show_season()` ignores the season already showing. **2026-10-14: the background builders are `static` (`build_season`, `build_four_seasons`, `add_faller`, `move_fallers`), shared with the intro and the ending; Play loads `INTRO_SCENE`.** The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
 | `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
 | `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
-| `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (no sounds exist yet; a sound put on those buses will follow the sliders). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
+| `scenes/AudioManager.gd` | **2026-10-15: the project's only autoload** (`project.godot` `[autoload]`, `AudioManager="*res://scenes/AudioManager.gd"`). Loads the four `assets/SoundEffects/*.wav` streams at start-up (a missing file is skipped with `push_warning`), keeps an eight-player pool on the `SFX` bus set to `PROCESS_MODE_ALWAYS`, and exposes `play_sfx(name)` plus `play_click()` / `play_jump()` / `play_pickup()` / `play_keyboard()`. Connects every `BaseButton.pressed` (via `get_tree().node_added`) to the click. `Keyboard.wav` is loaded but never triggered - there is no text field in the game. See §9, 2026-10-15 (later). |
+| `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (every sound effect sits on the `SFX` bus, so these sliders control them; `AudioManager` calls this at start-up). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
 | `scenes/SeasonTheme.gd` | **2026-10-14: every box wears its season.** Per-season `DARK` (borders and all text), `BUTTON` (button fill instead of white) and `FOCUS` (keyboard ring) colours; buttons have a thicker bottom edge that squashes when pressed; **panels are pixel-art frames** (`panel_box()` / `frame_texture()`) drawn from the 24x24 text picture `FRAME` plus each season's `DECORATIONS` (flowers + tulips, sun + waves, maple leaves, snow cap + icicles), scaled `PIXEL_SCALE` (5) times. The outer `FRAME_OUTSIDE` (4) art pixels are see-through and drawn outside the box (`expand_margin`), so decorations overhang it; the middle 4 art pixels repeat, so a decoration must stay in the corners unless it repeats every 4 (see the comment above `FRAME`). `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
 | `tests/_menus_test.gd` | Automated suite (**255 checks** since 2026-10-14, when the pause menu checks were extended to all eight levels and Play to the intro) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
+| `tests/_audio_test.gd` | Automated suite (**21 checks**) for the audio: the autoload exists, all four streams load, the pool is on the `SFX` bus and outlives a pause, each `play_*` helper reaches its own stream, a new Button/TextureButton is given the click while a slider is not, and Sound volume 0 mutes the bus. See §9, 2026-10-15 (later). |
 | `scenes/StoryIntro.gd` | `class_name StoryIntro`. Five `PAGES` (text, picture, season colours). Pictures come from `TitleScreen.build_season` / `build_four_seasons`; the "year has stopped" page is the four seasons tinted grey. Next turns the page, Let's go! / Skip / Esc call `start_game()` (loads `Level.tscn`). A page turned mid-fade kills the running fade first, so a late callback can never hide the current picture. |
 | `scenes/Ending.gd` | `class_name Ending`. A recap of four beats (`BEAT_TIME` 5.5s), one per season from `RECAP` (achievement, SDG fact, goal), then `show_finale()`: four season columns, confetti in the season colours, Congratulations!, Play again (`Level.tscn`) and Back to title. Enter / Esc / a click skips to the finale. |
 | `tests/_new_levels_test.gd` | Automated suite (**136 checks**, an Enter-key section + 4 levels) for the four new levels (Spring 2, Summer 2, Autumn 1, Winter 1): Enter is the `next_level` key and does nothing during play, the stage and its `STAGE_n_*` layout and width, walls, floor, camera scrolls (long) or stays still (short), UI layer for the long levels, **every collectable really taken by its intended route and really not from the place its comment says is out of reach**, wrong targets refused, finishing only after the last item, and each level's next scene. |
@@ -1666,6 +1668,18 @@ These cost real time during the fix and will mislead anyone testing again:
 - **(2026-10-14) The garden suite's "it really did wait about as long as the pause
   asked for" check can fail under load** (1.89s measured against 1.5s while 17 runs
   shared the CPU). Run alone it passes at 1.54s. It is a wall-clock check, not a bug.
+- **(2026-10-15) `--check-only` cannot resolve an autoload.** Since `AudioManager`
+  became an autoload, `godot --headless --script res://scenes/Player.gd --check-only`
+  fails with a false `Identifier not found: AudioManager`. A standalone script check
+  does not register autoload singletons, yet the name resolves fine the moment a
+  scene runs. To error-check a script that uses an autoload, run a scene (e.g.
+  `--quit-after 300` on the main scene) and watch the output instead.
+- **(2026-10-15) The headless suites now print leak warnings at exit.** A sound still
+  playing when a test quits is not freed by the Dummy audio driver, so any suite that
+  presses a button or picks something up reports a few `AudioStreamPlaybackWAV` /
+  `AudioStreamWAV` leaked instances. Reproduced without AudioManager (see the
+  2026-10-15 (later) entry in §9). Harmless, still passing, not suppressed - the same
+  policy as the Winter leak above.
 
 - **GDScript lambdas capture local variables by value.** A `func():` assigned to
   a variable cannot write back to a plain local (e.g. a float). Use a one-
@@ -1829,11 +1843,22 @@ These cost real time during the fix and will mislead anyone testing again:
 
 ## 8. Current Task / Next Task
 
+**2026-10-15 - DONE: the four sound files that arrived with this session are wired
+in.** `assets/SoundEffects/` now holds `Click.wav`, `Jump.wav`, `Pick_Up_Item.wav`
+and `Keyboard.wav`, and a new autoload `AudioManager` plays the click on every menu
+button, the jump, and the pick-up. `Keyboard.wav` is loaded but never triggered -
+the game has no text field - and placement / completion / icicle sounds still have
+no asset, so they stay silent. A new suite, `tests/_audio_test.tscn` (21 checks),
+covers the wiring, and every existing suite still passes. See §9, 2026-10-15
+(later). When playing by hand, **listen for the clicks (especially Resume while
+paused), the jump and the pick-up**, and confirm the Sound slider changes them and
+zero mutes them.
+
 **2026-10-14 - NEXT TASK: play the whole game by hand, title to ending.** Every
 season now has two levels, Play opens a story intro, and Winter 2 ends in an ending
-animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,333
-checks) and by real-renderer screenshots, but **nobody has played the new levels with
-a keyboard yet**. Things to watch for:
+animation (see §9, 2026-10-14). All of it is verified headless (13 suites, 1,354
+checks, the audio suite included) and by real-renderer screenshots, but **nobody has
+played the new levels with a keyboard yet**. Things to watch for:
 1. **Spring 2:** is the stack for the water easy to find, and do the two cats really
    end up carrying soil and seeds together, or does one cat do all the trips?
 2. **Summer 2:** six pieces with the bins in the middle - fun, or too much walking?
@@ -1845,7 +1870,11 @@ a keyboard yet**. Things to watch for:
 5. **Story intro:** is it read, or skipped straight away? Is five pages too many?
 6. **Ending:** does the recap pace feel right (5.5s a season), and do the SDG facts
    get read?
-7. Then the older checks below (Autumn camera seams, Winter fish routes) still apply.
+7. **Sound (2026-10-15):** listen for the click on every menu button (including
+   Resume while the game is paused), the jump and the pick-up; check the Sound
+   slider changes them and zero mutes them. `Keyboard.wav` is deliberately unused
+   (no text field exists). See §9, 2026-10-15 (later).
+8. Then the older checks below (Autumn camera seams, Winter fish routes) still apply.
 
 **DONE: the Spring gardening mechanic**, **the items are now used up for good**
 rather than going back where they were found, and **completing Spring now goes
@@ -1923,6 +1952,144 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-15 (later) - Four sound files arrive, and one AudioManager autoload wires them up
+
+**The task.** Attach the sound effects that are now in the project to the events
+they belong to - a click on every menu button, a jump, and a pick-up - using only
+the files present, without touching gameplay, layout, or the existing Music/Sound
+volume sliders.
+
+**What is there now.** Four `.wav` files live in `assets/SoundEffects/`:
+`Click.wav`, `Jump.wav`, `Keyboard.wav`, `Pick_Up_Item.wav`. They are imported by
+the engine (each has a `.wav.import`, added this session). Before this the project
+had no audio at all (see the 2026-10-15 entry below); this entry closes that
+missing-asset case for the three events that have a file.
+
+**How it is wired - one new autoload, `scenes/AudioManager.gd`.** This is the
+project's first and only autoload, registered in `project.godot` as
+`AudioManager="*res://scenes/AudioManager.gd"`. §10 says "no autoloads unless there
+is a concrete need"; a single always-present place to hold the sound files and the
+players is that need, and it is small (one script, ~100 lines).
+
+- On start-up it loads the four streams, asks `GameSettings.ensure_loaded()` /
+  `apply_audio()` so the `SFX` bus and the saved Sound volume exist immediately, and
+  builds a pool of eight `AudioStreamPlayer`s on that bus. A missing file is skipped
+  with `push_warning` instead of crashing.
+- `play_sfx(name)` picks a free player so two sounds do not cut each other off, and
+  `play_click()` / `play_jump()` / `play_pickup()` / `play_keyboard()` are the named
+  helpers.
+- The pool runs with `PROCESS_MODE_ALWAYS`, so pressing Resume on a paused game is
+  still heard.
+
+**The three events that were wired:**
+
+- **Jump** - `scenes/Player.gd`, inside the block that actually launches the jump
+  (the same `if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0` where the velocity
+  is set). A held jump key in mid-air stays silent, because that block only runs on a
+  real jump. Both players share this one script, so both are covered.
+- **Pick-up** - `scenes/Player.gd`, first line of `pick_up()`. Every automatic
+  pick-up funnels through there already: `GardenItem._collect()` (Spring soil,
+  seeds, water; Autumn leaves) and `Fish._collect()` (Winter), so the sound plays
+  once per item without editing any item script.
+- **Menu click** - `AudioManager` listens on `get_tree().node_added` and connects
+  every `BaseButton.pressed` to `play_click()`. This covers the title (Play, How to
+  Play, Settings, Quit), the Settings panel, the pause menu (Pause, Resume, Restart,
+  Settings, Back to title, the Yes/No confirmation), Next Level and the ending, with
+  no scene edited by hand. Sliders are not `BaseButton`s, so dragging one stays
+  silent. The connect is guarded by `is_connected`, so a node added twice does not
+  play the click twice.
+
+**Deliberately left silent, and why.** `Keyboard.wav` is **not wired**: the game has
+no typed-text field anywhere (no `LineEdit`/`TextEdit`; the only "keyboard" in the
+game is focus navigation with arrow keys / Enter). A sound is left unused rather
+than given an invented event for it, so it sits in the manager, ready for the day a
+text field exists. The other events from the earlier, broader list - correct / wrong
+placement, level completion, and the Winter icicle warning / fall / impact - still
+have no matching asset, so nothing was changed for them. The Music Volume and Sound
+Volume sliders and every settings behaviour are untouched.
+
+**Testing.** A new suite, `tests/_audio_test.tscn` (run like the others), checks: the
+autoload exists; all four streams load; every pool player is on the `SFX` bus and
+outlives a pause; each `play_*` helper reaches the right stream; a freshly added
+`Button`/`TextureButton` is given the click while a slider is not; and Sound volume
+zero mutes the `SFX` bus. It reports `ALL CHECKS PASSED`.
+
+Everything was re-run: `_menus_test`, `_garden_test`, `_summer_test`,
+`_new_levels_test`, `_stack_walk_test`, `_stack_jump_test`, `_autumn_test`,
+`_winter_test`, `_story_ending_test --spring-check`, `_next_level_test
+--spring2-check`, and all seven `_season_chain_test` legs - each printed
+`ALL CHECKS PASSED` or its arrival line. The main scene, 300 frames headless, prints
+no errors and no warnings.
+
+**Known, not fixed: extra "leaked at exit" warnings in the headless suites.** A
+sound still playing when a test process quits is not released by Godot's Dummy audio
+driver, so a suite that presses a button or picks something up now prints a few
+`AudioStreamPlaybackWAV` / `AudioStreamWAV` leaked-instance warnings at exit. It was
+reproduced with a throwaway six-line scene that plays one sound through a bare
+`AudioStreamPlayer` and quits - no AudioManager involved - so it is engine-side, not
+this code. It is the same class of noise as the Winter suite's pre-existing leak
+(§7) and, like it, is not suppressed; the checks still pass.
+
+**Next, if wanted.** A text field anywhere would make `Keyboard.wav` useful
+(`play_keyboard()` is ready). Real placement / completion / icicle sounds can be
+dropped in by adding them to `SOUND_PATHS` and calling the matching helper.
+
+### 2026-10-15 - Audio integration: the project has no audio assets, so nothing was wired
+
+**The task.** Integrate sound into the existing game using only audio files that are
+already in the project: jump / pickup / correct-placement / wrong-placement /
+level-completion sound effects, Winter icicle warning / falling / impact sounds, and a
+click on every existing menu button - without touching any gameplay, layout, or the
+existing Music Volume control.
+
+**The blocker: the project has no audio files at all.** Before changing anything, the
+whole project was searched for audio, including the generated cache and the git
+history:
+
+- no `.wav`, `.ogg`, `.mp3`, `.flac`, `.opus` or other audio file anywhere under the
+  project. The only file types present are `.png`, `.ttf`, `.gd`, `.tscn`, `.uid`,
+  `.import`, `.md`, `.docx`, `.svg` and `.json`;
+- nothing audio-related in `.godot/` - its cache holds only `.ctex` textures,
+  `.fontdata` and `.md5` checksums;
+- no audio file has ever existed in any commit or branch (`git log --all`);
+- no `AudioStreamPlayer` / `AudioStream` node in any scene, and no bus-layout
+  resource.
+
+This matches what earlier notes already said: §7 ("no audio") and the 2026-10-08 entry
+("Volume sliders have nothing to control yet - there is no audio").
+
+**What was done, and what was deliberately not done.** Because the brief forbids
+generating, downloading, importing or creating placeholder/silent audio, and because no
+suitable asset exists for any event, **no gameplay or UI file was changed.** A sound
+effect cannot be attached to an event whose sound does not exist, and a silent
+`AudioStream` would add nodes without adding audio. Every event in the brief - player
+jump; automatic pickup; correct and incorrect placement; level completion; Winter
+icicle warning, fall and impact; and the button click - was therefore left exactly as
+it was, and is listed here as **missing an audio asset**.
+
+**The existing Music Volume control is correct and untouched.** It was inspected and
+the menus suite re-run to confirm it: `SettingsMenu`'s Music slider writes
+`GameSettings.music_volume` and calls `GameSettings.apply_audio()`, which creates the
+`Music` and `SFX` buses and sets each one's volume; the two are separate, so Music
+Volume cannot move an effect, and no new slider or toggle was added. There is simply no
+background music for it to control yet (which the brief allows), so it was left as is.
+`tests/_menus_test` confirms there is a `Music` bus, an `SFX` bus, that the Music bus
+sits at the slider's volume (`db=-12.04` for the test's `0.25`), and that a sound
+volume of zero mutes the `SFX` bus.
+
+**Testing.** No code or scene was modified, so there was nothing new to test. The
+project was still verified healthy on this machine (Godot 4.7.2):
+
+- `tests/_menus_test.tscn`: `ALL CHECKS PASSED`, including the Music/SFX bus checks
+  above.
+- `scenes/TitleScreen.tscn` (the main scene), 300 frames headless: no errors, no
+  warnings.
+- `assets/` was re-inspected: still only PNGs and the font - no new files added.
+
+**What would unblock this.** Add real sound-effect `.wav`/`.ogg` files to the project,
+and each event can then be wired on the existing `SFX` bus (music on the `Music` bus);
+the existing sliders will control them with no settings rework.
 
 ### 2026-10-14 (late night) - Little seasonal details on the title buttons
 

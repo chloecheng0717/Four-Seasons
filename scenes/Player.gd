@@ -113,6 +113,9 @@ func can_pick_up() -> bool:
 ## Called by a GardenItem the moment this player walks into it.
 func pick_up(kind: StringName, texture: Texture2D, region: Rect2,
 		put_back: Callable, use_up: Callable, item_node: Node2D = null) -> void:
+	# The one place every pick-up passes through - garden items and fish alike -
+	# so the sound is played once here and no item script needs to know about it.
+	AudioManager.play_pickup()
 	carried_kind = kind
 	_put_back = put_back
 	_use_up = use_up
@@ -336,6 +339,9 @@ func _physics_process(delta: float) -> void:
 		_coyote_timer = 0.0
 		# A jump of our own is deliberate, so leave the stack behind.
 		_set_support(null)
+		# Only a jump that actually happens makes the noise, so a held key in
+		# mid-air stays silent.
+		AudioManager.play_jump()
 
 	# While rising we must not be snapped back down onto the surface we are
 	# leaving, or the jump is cancelled before it has moved.
