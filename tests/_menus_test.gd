@@ -67,14 +67,36 @@ func _test_theme() -> void:
 	_emit("")
 	_emit("=== 1. every season has its own look ===")
 	var colours := {}
+	var frames := {}
 	for season in SeasonTheme.ORDER:
 		var theme := SeasonTheme.make_theme(season)
 		var primary := theme.get_stylebox("normal", "PrimaryButton") as StyleBoxFlat
 		_check("%s: the primary button is filled with the season colour" % season,
 			primary != null and primary.bg_color == SeasonTheme.MAIN[season])
-		var panel := theme.get_stylebox("panel", "PanelContainer") as StyleBoxFlat
-		_check("%s: panels use the season's pale tint" % season,
-			panel != null and panel.bg_color == SeasonTheme.PANEL[season])
+		# Since 2026-10-14 a panel is the season's pixel-art frame: a picture, filled
+		# with the pale tint in the middle, with the season's decorations round it.
+		var panel := theme.get_stylebox("panel", "PanelContainer") as StyleBoxTexture
+		var frame := panel.texture.get_image() if panel != null else null
+		_check("%s: panels are the season's pixel-art frame, filled with its pale tint" % season,
+			frame != null
+			and frame.get_pixel(frame.get_width() / 2, frame.get_height() / 2)
+				.is_equal_approx(SeasonTheme.PANEL[season]))
+		frames[season] = frame
+		var button := theme.get_stylebox("normal", "Button") as StyleBoxFlat
+		_check("%s: buttons have the season's dark border and a pale season fill" % season,
+			button != null and button.border_color == SeasonTheme.DARK[season]
+			and button.bg_color == SeasonTheme.BUTTON[season])
+		_check("%s: buttons are thicker at the bottom, and pressing one squashes it" % season,
+			button != null and button.border_width_bottom > button.border_width_top
+			and (theme.get_stylebox("pressed", "Button") as StyleBoxFlat).border_width_bottom
+				< button.border_width_bottom)
+		_check("%s: text is in the season's dark colour" % season,
+			theme.get_color("font_color", "Label") == SeasonTheme.DARK[season]
+			and theme.get_color("font_color", "Button") == SeasonTheme.DARK[season])
+		var ring := theme.get_stylebox("focus", "Button") as StyleBoxFlat
+		_check("%s: the keyboard focus ring stands out from the season colour" % season,
+			ring != null and ring.border_color == SeasonTheme.FOCUS[season]
+			and ring.border_color != SeasonTheme.MAIN[season])
 		_check("%s: sliders have a round knob picture" % season,
 			theme.get_icon("grabber", "HSlider") != null)
 		_check("%s: the check box has an empty and a ticked picture" % season,
@@ -82,6 +104,18 @@ func _test_theme() -> void:
 			and theme.get_icon("unchecked", "CheckBox") != null)
 		colours[SeasonTheme.MAIN[season].to_html()] = true
 	_check("the four seasons have four different colours", colours.size() == 4)
+	# Each season's decorations make its frame picture different from every other.
+	var different := true
+	for a in SeasonTheme.ORDER:
+		for b in SeasonTheme.ORDER:
+			if a < b and frames[a] != null and frames[b] != null:
+				different = different and frames[a].get_data() != frames[b].get_data()
+	_check("the four seasons have four different frames", different)
+	var corner: Image = frames["winter"]
+	_check("decorations stick out past the box: the frame picture has a see-through ring",
+		corner != null and corner.get_pixel(corner.get_width() / 2,
+			SeasonTheme.FRAME_OUTSIDE * SeasonTheme.PIXEL_SCALE - 1).a > 0.0
+		and frames["summer"].get_pixel(0, frames["summer"].get_height() / 2).a == 0.0)
 	_check("the badge names the season and its animals",
 		SeasonTheme.badge_text("winter") == "Winter · Penguins")
 	_check("the seasons go round in the same order as the levels",

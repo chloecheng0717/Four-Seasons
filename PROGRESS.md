@@ -1247,7 +1247,7 @@ these exist yet.
 | `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
 | `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
 | `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (no sounds exist yet; a sound put on those buses will follow the sliders). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
-| `scenes/SeasonTheme.gd` | `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
+| `scenes/SeasonTheme.gd` | **2026-10-14: every box wears its season.** Per-season `DARK` (borders and all text), `BUTTON` (button fill instead of white) and `FOCUS` (keyboard ring) colours; buttons have a thicker bottom edge that squashes when pressed; **panels are pixel-art frames** (`panel_box()` / `frame_texture()`) drawn from the 24x24 text picture `FRAME` plus each season's `DECORATIONS` (flowers + tulips, sun + waves, maple leaves, snow cap + icicles), scaled `PIXEL_SCALE` (5) times. The outer `FRAME_OUTSIDE` (4) art pixels are see-through and drawn outside the box (`expand_margin`), so decorations overhang it; the middle 4 art pixels repeat, so a decoration must stay in the corners unless it repeats every 4 (see the comment above `FRAME`). `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
 | `tests/_menus_test.gd` | Automated suite (**255 checks** since 2026-10-14, when the pause menu checks were extended to all eight levels and Play to the intro) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
 | `scenes/StoryIntro.gd` | `class_name StoryIntro`. Five `PAGES` (text, picture, season colours). Pictures come from `TitleScreen.build_season` / `build_four_seasons`; the "year has stopped" page is the four seasons tinted grey. Next turns the page, Let's go! / Skip / Esc call `start_game()` (loads `Level.tscn`). A page turned mid-fade kills the running fade first, so a late callback can never hide the current picture. |
 | `scenes/Ending.gd` | `class_name Ending`. A recap of four beats (`BEAT_TIME` 5.5s), one per season from `RECAP` (achievement, SDG fact, goal), then `show_finale()`: four season columns, confetti in the season colours, Congratulations!, Play again (`Level.tscn`) and Back to title. Enter / Esc / a click skips to the finale. |
@@ -1831,7 +1831,7 @@ These cost real time during the fix and will mislead anyone testing again:
 
 **2026-10-14 - NEXT TASK: play the whole game by hand, title to ending.** Every
 season now has two levels, Play opens a story intro, and Winter 2 ends in an ending
-animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,311
+animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,329
 checks) and by real-renderer screenshots, but **nobody has played the new levels with
 a keyboard yet**. Things to watch for:
 1. **Spring 2:** is the stack for the water easy to find, and do the two cats really
@@ -1923,6 +1923,38 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-14 (night) - Menu boxes in their season's style
+
+Asked for: the main menu, pause menu and other UI boxes should follow the season
+instead of white fill and a blue outline. All of it is in `SeasonTheme.make_theme()`,
+so the title, pause menu, settings, How to Play, confirm prompt, story intro and ending
+changed together, with no scene edits.
+
+- **Colours:** each season has a dark colour for borders and all text (green, brown,
+  deep brown, blue), a pale button fill instead of white, and a focus ring colour that
+  stands out from that season's main colour (pink, sea blue, red, orange).
+- **Buttons:** a chunky pixel look - square-ish corners with no smoothing, a thick
+  bottom edge, and pressing squashes the edge and nudges the words down.
+- **Panels:** pixel-art frames from a 24x24 text picture, so the team can redraw them in
+  a text editor. Spring: pink flowers on the top corners, tulips at the bottom. Summer:
+  a sun on the top-right corner, waves along the bottom. Autumn: an orange and a red
+  maple leaf on top, small gold leaves at the bottom. Winter: a snow cap along the top,
+  heaped at the corners, with icicles, and drifts at the bottom corners.
+- **How it got there:** the first version drew pale decorations inside a pale panel
+  and they vanished; the second was too small to notice. The final frame has a
+  see-through ring drawn outside the box so decorations overhang its edges, bigger
+  shapes, and stronger colours. Winter's repeating bumps and icicles looked like a
+  notepad's spiral, so its middle is now a smooth slab and the bumps and icicles are
+  only at the corners. Every picture was checked by a script against the stretch rules
+  before it was used.
+- **Tests:** 12 suites, **1,329 checks, 0 failures**. The menus suite's panel check now
+  reads the frame picture (its middle is the pale tint), and it gains checks that
+  borders and text use the dark colour, buttons squash when pressed, the focus ring
+  differs from the main colour, the four frames differ, and decorations overhang.
+- **Real renderer:** the pause menu in all four seasons, the title, settings, How to Play,
+  an intro page, the finale and the confirm prompt were captured and looked right
+  (probe deleted). Winter's snow is the subtlest of the four, white on a pale panel.
 
 ### 2026-10-14 (evening) - A pixel font for the whole game
 

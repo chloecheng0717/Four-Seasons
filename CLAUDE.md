@@ -49,8 +49,9 @@ parallel. New test harnesses go in `tests/`.
 - **2026-10-14:** a new level per season (Spring 2 / Summer 2 long and scrolling,
   Autumn 1 / Winter 1 one screen; the original long Autumn and Winter are now level 2),
   a five-page story intro, an ending (recap with each season's SDG fact, then a
-  four-season finale), and Enter = Next Level.
-- Tests: 12 suites (the chain suite runs as 7 legs), **1,311 checks, 0 failures**
+  four-season finale), Enter = Next Level, a pixel font, and menu boxes styled to
+  each season (pixel-art frames with flowers / sun and waves / leaves / snow).
+- Tests: 12 suites (the chain suite runs as 7 legs), **1,329 checks, 0 failures**
   (2026-10-14).
 - Known, pre-existing: the Winter suite prints leak warnings at exit (PROGRESS §7). It
   still passes; don't suppress the warnings.
@@ -79,6 +80,7 @@ parallel. New test harnesses go in `tests/`.
 | Intro, ending and title share `TitleScreen`'s static season builders | No copied drawing code |
 | Pixel font: Pixelify Sans (OFL), set once as `[gui] theme/custom_font` | Readable in full sentences for 7-12s; Press Start 2P is too wide. Licence file must stay beside the font |
 | Font import: antialiasing ON, hinting/sub-pixel OFF, `liga`/`clig` ligatures OFF | Not a strict-grid font, so no-AA breaks small text; its fi/fl ligatures look like "A" |
+| Menu boxes: per-season dark/button/focus colours, chunky pixel buttons, panels = pixel-art frames from text pictures in `SeasonTheme.gd` | The team asked for seasonal boxes; text pictures can be redrawn without a drawing program. Decorations must stay in the corners unless they repeat every 4 art pixels |
 
 ## Gotchas that cost time
 - A headless run that prints **nothing** has a parse error; it isn't slow. Use `--check-only`.
