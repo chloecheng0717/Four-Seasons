@@ -3,17 +3,17 @@ extends Node2D
 ## End-to-end check for the Season ending: a real Spring run to the flower, the
 ## flower given its pause before the completion screen, both the Level Complete
 ## picture and the Next Level button turning up together, and then the Next Level
-## button being pressed, which leaves Spring for the Summer placeholder.
+## button being pressed, which leaves Spring 1 for Spring 2.
 ##
 ## A mouse click arrives at a TextureButton as its pressed signal, so the test
 ## first proves that signal really is connected to the level's handler and then
 ## presses it. Everything that runs from the signal onwards - the scene swap out
-## of Spring and into Summer - is exactly what a real click does. (Synthetic
+## of Spring 1 and into Spring 2 - is exactly what a real click does. (Synthetic
 ## mouse events are deliberately not used: the control tree under --headless
 ## never receives them, so a "real" click cannot be simulated that way.)
 ##
-## Once the swap happens the Summer placeholder (scenes/SummerLevel.gd) notices
-## the user argument "--next-level-check", prints "NEXT LEVEL REACHED SUMMER"
+## Once the swap happens Spring 2 (scenes/Level.gd with stage 2) notices
+## the user argument "--spring2-check", prints "NEXT LEVEL REACHED SPRING 2"
 ## and quits with exit code 0. This test never presses the button unless every
 ## check so far has passed, so a clean exit really does mean the whole flow
 ## worked.
@@ -21,11 +21,11 @@ extends Node2D
 ## Note on the press: the transition frees this very scene, so after the button
 ## is pressed the test does not await anything - it stamps the time and lets its
 ## _process watchdog complain if it is somehow still alive later. A still-alive
-## test means the press never changed the scene; a freed test means the Summer
-## placeholder took over and quits with its own message.
+## test means the press never changed the scene; a freed test means Spring 2
+## took over and quits with its own message.
 
 const LEVEL_SCENE := "res://scenes/Level.tscn"
-const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
+const SPRING2_SCENE := "res://scenes/SpringLevel2.tscn"
 const NEXT_TEXTURE := preload("res://assets/Next_Button.png")
 
 const GROUND_Y := 560.0
@@ -49,15 +49,15 @@ var _finished := false
 
 
 func _ready() -> void:
-	# This test can only finish if scenes/SummerLevel.gd sees --next-level-check
+	# This test can only finish if Spring 2 (Level.gd) sees --spring2-check
 	# and quits itself after the swap. Pressing the button frees this node along
 	# with the Spring level, so the _process watchdog below is gone too and
-	# nothing is left to stop a run that never reaches Summer's own quit. Checked
+	# nothing is left to stop a run that never reaches Spring 2's own quit. Checked
 	# here so a missing argument fails in a second with the invocation it needs,
 	# instead of hanging until the runner's timeout kills it.
-	if not OS.get_cmdline_user_args().has("--next-level-check"):
-		_check("this test needs the user argument --next-level-check", false,
-			" run: --scene res://_next_level_test.tscn -- --next-level-check")
+	if not OS.get_cmdline_user_args().has("--spring2-check"):
+		_check("this test needs the user argument --spring2-check", false,
+			" run: --scene res://_next_level_test.tscn -- --spring2-check")
 		_finish(false)
 		return
 	level = (load(LEVEL_SCENE) as PackedScene).instantiate()
@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 		get_tree().quit(2)
 	# If the button was pressed but this test is still running a moment later,
 	# the scene never changed - so the press failed. Once the scene does change,
-	# this node is freed and _process stops (the Summer placeholder then reports
+	# this node is freed and _process stops (Spring 2 then reports
 	# the success itself), so there is no overlap.
 	if _press_timestamp_ms > 0 and Time.get_ticks_msec() - _press_timestamp_ms > 500:
 		_press_timestamp_ms = -1
@@ -180,9 +180,9 @@ func _run() -> void:
 	await _test_the_stage_is_set()
 	await _test_the_whole_run()
 	if failures.is_empty():
-		await _test_the_click_leaves_for_summer()
+		await _test_the_click_leaves_for_spring2()
 	# If the button was pressed, the level either changed scene (freeing this test,
-	# with the Summer placeholder reporting success) or the _process watchdog
+	# with Spring 2 reporting success) or the _process watchdog
 	# reports the failure; nothing may touch this node in between, and it is
 	# already gone in the first case. If the press never happened then no scene
 	# changed, so it is safe to finish here with the summary.
@@ -191,13 +191,13 @@ func _run() -> void:
 
 
 func _test_the_stage_is_set() -> void:
-	_emit("=== 1. Summer has somewhere to go, and the button is out of the way ===")
+	_emit("=== 1. Spring 2 is there to go to, and the button is out of the way ===")
 	# Shorten the sprout growth so the test does not sit through the full 3s:
 	# the pause before the banner is what matters, not the growing itself. It has
 	# to be set before the water is delivered, which is when the pot starts its
 	# timer.
 	pot.grow_time = 0.5
-	_check("the Summer scene file exists", ResourceLoader.exists(SUMMER_SCENE))
+	_check("the Spring 2 scene file exists", ResourceLoader.exists(SPRING2_SCENE))
 	_check("the Next Level button starts hidden", not level.next_level_button.visible)
 	_check("and inert", level.next_level_button.disabled)
 	_check("carrying the Next Level picture",
@@ -241,8 +241,8 @@ func _test_the_whole_run() -> void:
 	_emit("")
 
 
-func _test_the_click_leaves_for_summer() -> void:
-	_emit("=== 3. the completion screen appears, then a click leaves for Summer ===")
+func _test_the_click_leaves_for_spring2() -> void:
+	_emit("=== 3. the completion screen appears, then a click leaves for Spring 2 ===")
 	var delay: float = level.complete_banner_delay
 	_check("the pause is the intended 1-2s", delay >= 1.0 and delay <= 2.0,
 		" delay=%.2fs" % delay)

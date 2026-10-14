@@ -11,6 +11,8 @@ extends Node2D
 ## the levels are played, and the menu's colours change with it.
 
 const SPRING_SCENE := "res://scenes/Level.tscn"
+## Play goes here first: the short story intro, which then starts Spring.
+const INTRO_SCENE := "res://scenes/StoryIntro.tscn"
 
 const SEASON_TIME := 5.0
 const FADE_TIME := 1.2
@@ -136,7 +138,7 @@ func _ready() -> void:
 	GameSettings.apply_fullscreen()
 
 	for each_season in SeasonTheme.ORDER:
-		var layer := _build_season(each_season)
+		var layer := build_season(each_season, _fallers)
 		layer.modulate.a = 1.0 if each_season == season else 0.0
 		seasons_holder.add_child(layer)
 		season_layers[each_season] = layer
@@ -158,7 +160,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_move_fallers(delta)
+	move_fallers(_fallers, _time, delta)
 
 	_season_timer -= delta
 	if _season_timer <= 0.0:
@@ -189,7 +191,7 @@ func _apply_season_to_menu() -> void:
 # --- Buttons ---------------------------------------------------------------
 
 func _on_play_pressed() -> void:
-	get_tree().change_scene_to_file(SPRING_SCENE)
+	get_tree().change_scene_to_file(INTRO_SCENE)
 
 
 func _open_how_to_play() -> void:
@@ -227,8 +229,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # --- Building one season's background -------------------------------------
+#
+# These are static, so the story intro and the ending can build exactly the same
+# season backgrounds without a copy of this code: they call
+# `TitleScreen.build_season("autumn", their_fallers)` and, every frame,
+# `TitleScreen.move_fallers(their_fallers, time, delta)`. `fallers` is the list
+# the falling leaves and snowflakes are added to, owned by whoever is drawing.
 
-func _build_season(for_season: String) -> Node2D:
+static func build_season(for_season: String, fallers: Array[Dictionary]) -> Node2D:
 	var layer := Node2D.new()
 	layer.name = for_season.capitalize()
 
@@ -259,14 +267,32 @@ func _build_season(for_season: String) -> Node2D:
 		_start_hop(sprite, index * 0.45)
 
 	if for_season == "autumn":
-		_add_falling_leaves(layer)
+		_add_falling_leaves(layer, fallers)
 	if for_season == "winter":
-		_add_falling_snow(layer)
+		_add_falling_snow(layer, fallers)
 
 	return layer
 
 
-func _add_ground(layer: Node2D, for_season: String) -> void:
+## All four seasons at once, side by side: four 320px columns, each a window onto
+## one whole season scene, shifted so the window lands on its two animals (they
+## stand at x 190 and 330). Used by the story intro and the ending.
+static func build_four_seasons(fallers: Array[Dictionary]) -> Node2D:
+	var holder := Node2D.new()
+	for index in SeasonTheme.ORDER.size():
+		var window := Control.new()
+		window.clip_contents = true
+		window.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		window.position = Vector2(index * 320.0, 0.0)
+		window.size = Vector2(320.0, 720.0)
+		var scene := build_season(SeasonTheme.ORDER[index], fallers)
+		scene.position.x = -100.0
+		window.add_child(scene)
+		holder.add_child(window)
+	return holder
+
+
+static func _add_ground(layer: Node2D, for_season: String) -> void:
 	var tile: Dictionary = TILES[for_season]
 	var region: Rect2 = tile["region"]
 	for row in 3:
@@ -287,7 +313,7 @@ func _add_ground(layer: Node2D, for_season: String) -> void:
 			layer.add_child(sprite)
 
 
-func _add_sea(layer: Node2D) -> void:
+static func _add_sea(layer: Node2D) -> void:
 	for row in SEA_ROWS:
 		for column in COLUMNS:
 			var sprite := Sprite2D.new()
@@ -300,7 +326,7 @@ func _add_sea(layer: Node2D) -> void:
 			layer.add_child(sprite)
 
 
-func _add_icicle(layer: Node2D) -> void:
+static func _add_icicle(layer: Node2D) -> void:
 	var icicle := Sprite2D.new()
 	icicle.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icicle.texture = ICICLE_TEXTURE
@@ -313,15 +339,15 @@ func _add_icicle(layer: Node2D) -> void:
 	layer.add_child(icicle)
 
 
-func _add_falling_leaves(layer: Node2D) -> void:
+static func _add_falling_leaves(layer: Node2D, fallers: Array[Dictionary]) -> void:
 	for index in LEAF_COUNT:
 		var leaf: Dictionary = LEAF_TEXTURES[index % LEAF_TEXTURES.size()]
 		var sprite := _sprite(leaf["texture"], leaf["region"], 36.0)
 		layer.add_child(sprite)
-		_add_faller(sprite, randf_range(40.0, 70.0), 30.0)
+		add_faller(fallers, sprite, randf_range(40.0, 70.0), 30.0)
 
 
-func _add_falling_snow(layer: Node2D) -> void:
+static func _add_falling_snow(layer: Node2D, fallers: Array[Dictionary]) -> void:
 	for index in SNOW_COUNT:
 		var flake := ColorRect.new()
 		var size := randf_range(4.0, 8.0)
@@ -329,35 +355,35 @@ func _add_falling_snow(layer: Node2D) -> void:
 		flake.color = Color(1, 1, 1, 0.9)
 		flake.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(flake)
-		_add_faller(flake, randf_range(30.0, 70.0), 12.0)
+		add_faller(fallers, flake, randf_range(30.0, 70.0), 12.0)
 
 
 ## Something that drifts down, sways side to side, and starts again at the top.
-func _add_faller(node: CanvasItem, speed: float, sway: float) -> void:
+static func add_faller(fallers: Array[Dictionary], node: CanvasItem, speed: float, sway: float) -> void:
 	var start_x := randf_range(0.0, COLUMNS * TILE_WIDTH)
 	node.set("position", Vector2(start_x, randf_range(-40.0, GROUND_Y)))
-	_fallers.append({
+	fallers.append({
 		"node": node, "speed": speed, "sway": sway,
 		"phase": randf_range(0.0, TAU), "base_x": start_x,
 	})
 
 
-func _move_fallers(delta: float) -> void:
-	for faller in _fallers:
+static func move_fallers(fallers: Array[Dictionary], time: float, delta: float) -> void:
+	for faller in fallers:
 		var node: CanvasItem = faller["node"]
 		var spot: Vector2 = node.get("position")
 		spot.y += faller["speed"] * delta
 		if spot.y > GROUND_Y:
 			spot.y = -40.0
 			faller["base_x"] = randf_range(0.0, COLUMNS * TILE_WIDTH)
-		spot.x = faller["base_x"] + sin(_time * 1.5 + faller["phase"]) * faller["sway"]
+		spot.x = faller["base_x"] + sin(time * 1.5 + faller["phase"]) * faller["sway"]
 		node.set("position", spot)
 		if node is Sprite2D:
-			(node as Sprite2D).rotation = sin(_time * 2.0 + faller["phase"]) * 0.5
+			(node as Sprite2D).rotation = sin(time * 2.0 + faller["phase"]) * 0.5
 
 
 ## A small happy hop, over and over, so the animals feel alive.
-func _start_hop(sprite: Sprite2D, delay: float) -> void:
+static func _start_hop(sprite: Sprite2D, delay: float) -> void:
 	var ground := sprite.position.y
 	var hop := sprite.create_tween().set_loops()
 	hop.tween_interval(delay + 1.2)
@@ -370,7 +396,7 @@ func _start_hop(sprite: Sprite2D, delay: float) -> void:
 
 ## A picture cropped to its art and scaled evenly to a height, centred on its
 ## node.
-func _sprite(texture: Texture2D, region: Rect2, height: float) -> Sprite2D:
+static func _sprite(texture: Texture2D, region: Rect2, height: float) -> Sprite2D:
 	var sprite := Sprite2D.new()
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.texture = texture
@@ -383,7 +409,7 @@ func _sprite(texture: Texture2D, region: Rect2, height: float) -> Sprite2D:
 
 ## The same, but with its bottom edge on `feet`, the way the levels stand
 ## players and bins on the ground.
-func _standing_sprite(texture: Texture2D, region: Rect2, height: float, feet: Vector2) -> Sprite2D:
+static func _standing_sprite(texture: Texture2D, region: Rect2, height: float, feet: Vector2) -> Sprite2D:
 	var sprite := _sprite(texture, region, height)
 	sprite.offset = Vector2(0, -region.size.y * 0.5)
 	sprite.position = feet

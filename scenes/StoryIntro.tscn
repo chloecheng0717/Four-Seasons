@@ -1,0 +1,74 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/StoryIntro.gd" id="1_intro_script"]
+
+[node name="StoryIntro" type="Node2D"]
+script = ExtResource("1_intro_script")
+
+[node name="Views" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 280.0
+offset_top = 36.0
+offset_right = 1000.0
+offset_bottom = 300.0
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 22
+
+[node name="Rows" type="VBoxContainer" parent="UI/Root/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Text" type="Label" parent="UI/Root/Panel/Margin/Rows"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 27
+text = "In a little valley, the year turns like a wheel."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Controls" type="Label" parent="UI/Root/Panel/Margin/Rows"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "P1:  A / D move,  Space jump          P2:  Left / Right move,  Enter jump"
+horizontal_alignment = 1
+
+[node name="Bottom" type="HBoxContainer" parent="UI/Root/Panel/Margin/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Skip" type="Button" parent="UI/Root/Panel/Margin/Rows/Bottom"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+text = "Skip"
+
+[node name="Page" type="Label" parent="UI/Root/Panel/Margin/Rows/Bottom"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "1 / 5"
+horizontal_alignment = 1
+
+[node name="Next" type="Button" parent="UI/Root/Panel/Margin/Rows/Bottom"]
+custom_minimum_size = Vector2(180, 50)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Next"

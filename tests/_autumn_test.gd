@@ -17,6 +17,7 @@ const AUTUMN_SCENE := "res://scenes/AutumnLevel.tscn"
 const SPRING_SCENE := "res://scenes/Level.tscn"
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
 const WINTER_SCENE := "res://scenes/WinterLevel.tscn"
+const ENDING_SCENE := "res://scenes/Ending.tscn"
 
 const FOX1_TEXTURE := preload("res://assets/Autumn/Fox1.png")
 const FOX2_TEXTURE := preload("res://assets/Autumn/Fox2.png")
@@ -1242,8 +1243,10 @@ func _test_the_completion_screen() -> void:
 	_check("Summer still leads on to Autumn",
 		_next_scene_of(SUMMER_SCENE) == AUTUMN_SCENE,
 		" summer next=%s" % _next_scene_of(SUMMER_SCENE))
-	_check("and Winter closes the loop back to Spring",
-		_next_scene_of(WINTER_SCENE) == SPRING_SCENE,
+	# 2026-10-14: Winter no longer loops straight back to Spring. Once Winter 2 is
+	# done the ending plays, and its Play again button is the way back to Spring.
+	_check("and Winter ends the year at the ending, which does exist",
+		_next_scene_of(WINTER_SCENE) == ENDING_SCENE and ResourceLoader.exists(ENDING_SCENE),
 		" winter next=%s" % _next_scene_of(WINTER_SCENE))
 	_emit("")
 

@@ -152,6 +152,135 @@ const BIN_SCENE := preload("res://scenes/TrashBin.tscn")
 ## finished Autumn goes back to Spring rather than becoming a dead end.
 const NEXT_SCENE := "res://scenes/AutumnLevel.tscn"
 
+## --- Summer 2 -----------------------------------------------------------------
+## Summer has two levels, and both use this script. Level 1 is SummerLevel.tscn,
+## the one-screen beach above. Level 2 is SummerLevel2.tscn, which sets
+## `stage = 2` and gets the tables below instead: a long beach, three screens
+## wide, that scrolls, with six pieces of rubbish and the three bins in the middle.
+## Level 1's tables above are left exactly as they were.
+##
+## The Next Level button of level 1 goes to level 2, and level 2's goes to Autumn
+## (NEXT_SCENE, which still means "the next season").
+const STAGE_2_SCENE := "res://scenes/SummerLevel2.tscn"
+
+## 3840 x 720 is 60 columns of 64px: three screens wide, one screen tall.
+const STAGE_2_WIDTH := 3840
+const STAGE_2_COLUMN_COUNT := 60
+
+## [row, first column, how many columns], read left to right. Rows 8, 6 and 4
+## have their tops at y = 448, 336 and 224, and no step is more than 112px. The
+## middle of the beach (x 1408..2368) is left open, because the bins stand there.
+const STAGE_2_PLATFORM_ROWS := [
+	[8, 4, 4],     # left: low shelf, paper above it      x  256.. 512
+	[8, 10, 3],    # left: step                           x  640.. 832
+	[6, 13, 4],    # left: high shelf, glass above it     x  832..1088
+	[8, 18, 4],    # left: low shelf, plastic on it       x 1152..1408
+	[8, 37, 4],    # right: low shelf, plastic above it   x 2368..2624
+	[8, 42, 3],    # right: step                          x 2688..2880
+	[6, 45, 4],    # right: middle step                   x 2880..3136
+	[4, 49, 3],    # right: top step, paper above it      x 3136..3328
+	[6, 54, 4],    # right: last shelf, glass high above  x 3456..3712
+]
+
+## Six pieces of rubbish, two of each kind, three on each side of the bins, so
+## the dogs have to decide which bin each one belongs in. A dog sweeps its body
+## from S-52 up to about S-186 when it jumps from a surface at y = S, and a dog on
+## its friend's head reaches about S-238.
+## - The first paper and the second plastic (boxes 306..354) need a jump from
+##   their low shelf (448); from the floor a jump only reaches 374.
+## - The first glass (box 198..242) needs the high shelf (336); the low step next
+##   to it only reaches 262.
+## - The first plastic sits on its low shelf and can be had from the floor.
+## - The second paper (box 86..134) needs the top step (224); the middle step
+##   only reaches 150.
+## - The second glass (box 108..140) is above the last shelf (336), where one
+##   jump only reaches 150. It takes two: one dog on the other's head. Its box is
+##   32px, like Spring's water, which leaves a clear margin either way.
+const STAGE_2_TRASH_ITEMS := [
+	{
+		"kind": &"paper",
+		"texture": preload("res://assets/Summer/Paper.png"),
+		"region": Rect2(24, 48, 224, 176),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(384, 330),
+	},
+	{
+		"kind": &"glass",
+		"texture": preload("res://assets/Summer/Glass bottle.png"),
+		"region": Rect2(88, 32, 88, 184),
+		"display_height": 64.0,
+		"pickup_size": 44.0,
+		"position": Vector2(960, 220),
+	},
+	{
+		"kind": &"plastic",
+		"texture": preload("res://assets/Summer/Plastic bag.png"),
+		"region": Rect2(24, 16, 184, 232),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(1280, 420),
+	},
+	{
+		"kind": &"plastic",
+		"texture": preload("res://assets/Summer/Plastic bag.png"),
+		"region": Rect2(24, 16, 184, 232),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(2496, 330),
+	},
+	{
+		"kind": &"paper",
+		"texture": preload("res://assets/Summer/Paper.png"),
+		"region": Rect2(24, 48, 224, 176),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(3232, 110),
+	},
+	{
+		"kind": &"glass",
+		"texture": preload("res://assets/Summer/Glass bottle.png"),
+		"region": Rect2(88, 32, 88, 184),
+		"display_height": 64.0,
+		"pickup_size": 32.0,
+		"position": Vector2(3584, 124),
+	},
+]
+
+## The same three bins as level 1, standing on the open floor in the middle of the
+## beach. Each one takes two pieces.
+const STAGE_2_BINS := [
+	{
+		"kind": &"paper",
+		"texture": preload("res://assets/Summer/Paper Bin.png"),
+		"region": Rect2(40, 40, 160, 192),
+		"position": Vector2(1680, 560),
+	},
+	{
+		"kind": &"plastic",
+		"texture": preload("res://assets/Summer/Plastic Bin.png"),
+		"region": Rect2(48, 32, 160, 192),
+		"position": Vector2(1920, 560),
+	},
+	{
+		"kind": &"glass",
+		"texture": preload("res://assets/Summer/Glass bin.png"),
+		"region": Rect2(48, 32, 160, 192),
+		"position": Vector2(2160, 560),
+	},
+]
+const STAGE_2_BIN_CAPACITY := 2
+
+## The camera follows the dogs only in a level wider than one screen. It never
+## moves vertically, because every level is exactly one screen tall.
+const CAMERA_Y := 360.0
+## The same easing Autumn and Winter use. See _follow_players.
+const CAMERA_SMOOTHING := 8.0
+
+## Which of Summer's two levels this is. SummerLevel.tscn leaves it at 1;
+## SummerLevel2.tscn sets it to 2.
+@export_range(1, 2) var stage: int = 1
+
 ## How long the Level Complete banner waits after the last piece of rubbish is
 ## sorted, so the sorted beach is visible on its own first. Same as Spring.
 @export_range(0.0, 5.0, 0.1) var complete_banner_delay: float = 1.5
@@ -165,20 +294,32 @@ const NEXT_SCENE := "res://scenes/AutumnLevel.tscn"
 @onready var trash: Node2D = $Trash
 @onready var bins: Node2D = $Bins
 @onready var players: Node2D = $Players
-@onready var level_complete_banner: Sprite2D = $LevelComplete
-@onready var next_level_button: TextureButton = $NextLevel
-@onready var wrong_bin_label: Label = $WrongBin
+@onready var camera: Camera2D = $Camera2D
+# Found by unique name (%), not by path: level 1 keeps these straight under the
+# root, but level 2 scrolls, so it keeps them in a UI layer that stays on screen.
+@onready var level_complete_banner: Sprite2D = %LevelComplete
+@onready var next_level_button: TextureButton = %NextLevel
+@onready var wrong_bin_label: Label = %WrongBin
 
 ## Counts down to the banner appearing. Negative means nothing is pending.
 var _banner_timer: float = -1.0
 var _banner_shown: bool = false
 ## Counts down to the "Wrong bin!" notice going away. Negative means it is not up.
 var _wrong_bin_timer: float = -1.0
-## The kinds sorted so far, so the same rubbish can never be counted twice.
-var _sorted: Dictionary = {}
-## Every kind the level is waiting for, taken from the bins so the two can never
-## disagree about what "finished" means.
-var _required_kinds: Array[StringName] = []
+## How many pieces of rubbish have been sorted so far. A full bin takes nothing
+## more and a sorted piece is used up for good, so nothing is counted twice.
+var _sorted_count: int = 0
+
+## The layout actually built. They start as level 1's tables, and _ready swaps
+## in level 2's when `stage` is 2.
+var level_width: int = LEVEL_WIDTH
+var world_columns: int = COLUMN_COUNT
+var platform_rows: Array = PLATFORM_ROWS
+var trash_items: Array = TRASH_ITEMS
+var bin_table: Array = BINS
+var bin_capacity: int = 1
+## The camera's smoothed position, kept unrounded. See _follow_players.
+var _camera_x: float = 0.0
 
 
 func _ready() -> void:
@@ -186,10 +327,26 @@ func _ready() -> void:
 	# needs to prove it arrived. When run with this user argument, say so and quit
 	# instead of building the level - exactly what the old placeholder did, so the
 	# Spring suite still works.
-	if OS.get_cmdline_user_args().has("--next-level-check"):
+	# --summer-check is the same thing under the name the season chain test uses.
+	var args := OS.get_cmdline_user_args()
+	if stage == 1 and (args.has("--next-level-check") or args.has("--summer-check")):
 		print("NEXT LEVEL REACHED SUMMER")
 		get_tree().quit(0)
 		return
+	# And the same again for arriving in Summer 2 from Summer 1.
+	if stage == 2 and args.has("--summer2-check"):
+		print("NEXT LEVEL REACHED SUMMER 2")
+		get_tree().quit(0)
+		return
+
+	if stage == 2:
+		level_width = STAGE_2_WIDTH
+		world_columns = STAGE_2_COLUMN_COUNT
+		platform_rows = STAGE_2_PLATFORM_ROWS
+		trash_items = STAGE_2_TRASH_ITEMS
+		bin_table = STAGE_2_BINS
+		bin_capacity = STAGE_2_BIN_CAPACITY
+	camera.limit_right = level_width
 
 	# The Next Level button belongs to the completion screen and nowhere else. The
 	# scene hides it and this hides it again, for the same reason as in Spring: a
@@ -200,9 +357,6 @@ func _ready() -> void:
 	next_level_button.disabled = true
 	next_level_button.pressed.connect(_on_next_level_pressed)
 
-	for entry in BINS:
-		_required_kinds.append(entry["kind"])
-
 	_build_ground()
 	_build_platforms()
 	_build_water()
@@ -211,15 +365,21 @@ func _ready() -> void:
 	_build_trash()
 	_build_bins()
 
+	# Put the camera on the dogs straight away, so a long level does not open with
+	# the view sweeping in from somewhere else.
+	if level_width > LEVEL_WIDTH:
+		_camera_x = _players_centre().x
+		camera.global_position = Vector2(roundf(_camera_x), CAMERA_Y)
+
 
 func _build_ground() -> void:
 	for row_offset in GROUND_ROW_COUNT:
-		for column in COLUMN_COUNT:
+		for column in world_columns:
 			_add_tile(column, GROUND_ROW + row_offset, row_offset > 0)
 
 
 func _build_platforms() -> void:
-	for platform in PLATFORM_ROWS:
+	for platform in platform_rows:
 		var row: int = platform[0]
 		var first_column: int = platform[1]
 		var column_count: int = platform[2]
@@ -243,7 +403,7 @@ func _add_tile(column: int, row: int, buried: bool) -> void:
 ## purely scenery: it cannot catch a dog, hold one up or be picked up.
 func _build_water() -> void:
 	for row in WATER_ROWS:
-		for column in COLUMN_COUNT:
+		for column in world_columns:
 			var sprite := Sprite2D.new()
 			sprite.texture = WATER_TEXTURE
 			sprite.texture_filter = 1
@@ -257,7 +417,7 @@ func _build_water() -> void:
 
 func _build_walls() -> void:
 	_add_wall(Rect2(0, 0, WALL_WIDTH, LEVEL_HEIGHT))
-	_add_wall(Rect2(LEVEL_WIDTH - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
+	_add_wall(Rect2(level_width - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
 
 
 func _add_wall(rect: Rect2) -> void:
@@ -308,7 +468,7 @@ func _build_players() -> void:
 ## from it, and it keeps Spring's guarantee that a used-up item leaves the level
 ## for good rather than going back where it was found.
 func _build_trash() -> void:
-	for item in TRASH_ITEMS:
+	for item in trash_items:
 		var rubbish := ITEM_SCENE.instantiate() as GardenItem
 		rubbish.item_kind = item["kind"]
 		rubbish.item_texture = item["texture"]
@@ -320,9 +480,10 @@ func _build_trash() -> void:
 
 
 func _build_bins() -> void:
-	for entry in BINS:
+	for entry in bin_table:
 		var bin := BIN_SCENE.instantiate() as TrashBin
 		bin.accepts_kind = entry["kind"]
+		bin.capacity = bin_capacity
 		bin.bin_texture = entry["texture"]
 		bin.art_region = entry["region"]
 		bin.position = entry["position"]
@@ -358,16 +519,45 @@ func _process(delta: float) -> void:
 	for index in ordered.size():
 		ordered[index].z_index = index
 
+	# Only a level wider than one screen scrolls. Level 1 is exactly one screen,
+	# so its camera never moves at all.
+	if level_width > LEVEL_WIDTH:
+		_follow_players(delta)
 
-## A bin has taken its rubbish. Count it, and finish the level once every kind
-## has been sorted.
+
+## The middle of the two dogs, which the one shared camera follows.
+func _players_centre() -> Vector2:
+	var sum := Vector2.ZERO
+	var count := 0
+	for child in players.get_children():
+		if child is Player:
+			sum += (child as Player).global_position
+			count += 1
+	if count == 0:
+		return Vector2(level_width * 0.5, CAMERA_Y)
+	return sum / float(count)
+
+
+## Moves the camera towards the middle of the two dogs and keeps it on whole
+## pixels. This is Autumn's camera (see AutumnLevel._follow_foxes for the full
+## story): the tiles are pixel art drawn 1:1, and a camera sitting on a fraction
+## of a pixel opens thin white lines between them as it pans. The easing is the
+## same as the engine's own smoothing; only the rounding is added.
+func _follow_players(delta: float) -> void:
+	var target_x: float = _players_centre().x
+	var weight: float = 1.0 - exp(-CAMERA_SMOOTHING * delta)
+	_camera_x = lerpf(_camera_x, target_x, weight)
+	camera.global_position = Vector2(roundf(_camera_x), CAMERA_Y)
+
+
+## A bin has taken a piece of rubbish. Count it, and finish the level once every
+## piece in the level has been sorted.
 ##
-## The Dictionary is the reason a bin cannot be counted twice: `_on_wrong_bin`
-## never gets here, and a bin that is already filled refuses to take anything
-## more, so this runs exactly once per kind.
-func _on_rubbish_sorted(kind: StringName) -> void:
-	_sorted[kind] = true
-	if _sorted.size() < _required_kinds.size():
+## A piece cannot be counted twice: `_on_wrong_bin` never gets here, a sorted
+## piece is used up for good, and a full bin refuses to take anything more.
+func _on_rubbish_sorted(_kind: StringName) -> void:
+	_sorted_count += 1
+	if _sorted_count < trash_items.size():
 		return
 	_finish_level()
 
@@ -408,6 +598,10 @@ func _on_wrong_bin(_held_kind: StringName, _bin_kind: StringName) -> void:
 	_wrong_bin_timer = wrong_bin_notice_time
 
 
-## The only door out of a finished Summer. Autumn is built, so this loads it.
+## The only door out of a finished Summer level. Level 1 leads to level 2, and
+## level 2 leads on to Autumn.
 func _on_next_level_pressed() -> void:
-	get_tree().change_scene_to_file(NEXT_SCENE)
+	if stage == 1:
+		get_tree().change_scene_to_file(STAGE_2_SCENE)
+	else:
+		get_tree().change_scene_to_file(NEXT_SCENE)

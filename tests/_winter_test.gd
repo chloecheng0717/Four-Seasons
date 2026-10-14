@@ -16,6 +16,8 @@ extends Node2D
 
 const WINTER_SCENE := "res://scenes/WinterLevel.tscn"
 const SPRING_SCENE := "res://scenes/Level.tscn"
+const WINTER2_SCENE := "res://scenes/WinterLevel2.tscn"
+const ENDING_SCENE := "res://scenes/Ending.tscn"
 
 const SNOW_TEXTURE := preload("res://assets/Winter/Snow Tile.png")
 const ICE_TEXTURE := preload("res://assets/Winter/Ice tile.png")
@@ -1076,9 +1078,16 @@ func _test_the_completion_screen() -> void:
 	# The button is not pressed here - that would change the scene out from under
 	# this test. Where it would go is read from the level's own constant instead.
 	var constants: Dictionary = level.get_script().get_script_constant_map()
-	_check("and it leads to Spring, which does exist, so Winter is not a dead end",
-		constants.get("NEXT_SCENE") == SPRING_SCENE
-		and ResourceLoader.exists(SPRING_SCENE),
+	# 2026-10-14: Winter 1 now leads to Winter 2, and Winter 2 to the ending, which
+	# is where the Play again button takes the players back to Spring.
+	_check("and level 1 leads to Winter 2, which does exist",
+		level.get("stage") == 1
+		and constants.get("STAGE_2_SCENE") == WINTER2_SCENE
+		and ResourceLoader.exists(WINTER2_SCENE),
+		" stage=%s stage2=%s" % [level.get("stage"), constants.get("STAGE_2_SCENE")])
+	_check("and after Winter 2 comes the ending, which does exist, so Winter is not a dead end",
+		constants.get("NEXT_SCENE") == ENDING_SCENE
+		and ResourceLoader.exists(ENDING_SCENE),
 		" next=%s" % constants.get("NEXT_SCENE"))
 	_emit("")
 

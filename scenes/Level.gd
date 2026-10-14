@@ -91,9 +91,86 @@ const TILE_SCENE := preload("res://scenes/GroundTile.tscn")
 const ITEM_SCENE := preload("res://scenes/GardenItem.tscn")
 const POT_SCENE := preload("res://scenes/PlantPot.tscn")
 
-## Where the Next Level button sends the player. There is no Summer gameplay
-## yet, only a placeholder scene that makes the transition real.
+## Where the Next Level button sends the player once Spring 2 is finished.
 const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
+
+## --- Spring 2 -----------------------------------------------------------------
+## Spring has two levels, and both use this script. Level 1 is Level.tscn, the
+## one-screen garden above. Level 2 is SpringLevel2.tscn, which sets `stage = 2`
+## and gets the tables below instead: a long meadow, three screens wide, that
+## scrolls. Level 1's tables above are left exactly as they were.
+##
+## The Next Level button of level 1 goes to level 2, and level 2's goes to Summer.
+const STAGE_2_SCENE := "res://scenes/SpringLevel2.tscn"
+
+## 3840 x 720 is 60 columns of 64px: three screens wide, one screen tall.
+const STAGE_2_WIDTH := 3840
+const STAGE_2_COLUMN_COUNT := 60
+
+## [row, first column, how many columns], read left to right. Rows 8, 6 and 4
+## have their tops at y = 448, 336 and 224, and no step is more than 112px, which
+## a jump (about 134px) always clears.
+const STAGE_2_PLATFORM_ROWS := [
+	[8, 6, 4],     # low shelf with the soil above it    x  384.. 640
+	[8, 13, 3],    # stepping stone                      x  832..1024
+	[8, 22, 4],    # the climb: low step                 x 1408..1664
+	[6, 26, 4],    # the climb: middle step              x 1664..1920
+	[4, 30, 4],    # the climb: top, seeds above it      x 1920..2176
+	[8, 36, 3],    # stepping stone                      x 2304..2496
+	[8, 41, 3],    # step up to the water shelf          x 2624..2816
+	[6, 44, 5],    # water shelf, water high above it    x 2816..3136
+]
+
+## The same three things as level 1, spread along the meadow in the order they
+## are needed. A cat sweeps its body from S-52 up to about S-186 when it jumps
+## from a surface at y = S, and a cat on its friend's head reaches about S-238.
+## - Soil: box 306..354. Out of reach from the floor (374 and below), easy from
+##   the low shelf (448), so it is the first little climb.
+## - Seeds: box 86..134. Out of reach from the middle step (150 and below), so
+##   it needs the full climb to the top step (224).
+## - Water: box 108..140, above the water shelf (336). One cat jumping only gets
+##   to 150, so it takes two: one cat stands on the other's head and jumps.
+## A cat carries one thing at a time, so the quickest way through is for each cat
+## to carry one of the first two things to the pot, then stack for the water.
+const STAGE_2_GARDEN_ITEMS := [
+	{
+		"kind": &"soil",
+		"texture": preload("res://assets/Spring/Soil.png"),
+		"region": Rect2(32, 64, 184, 144),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(512, 330),
+	},
+	{
+		"kind": &"seeds",
+		"texture": preload("res://assets/Spring/Seeds.png"),
+		"region": Rect2(56, 56, 80, 96),
+		"display_height": 56.0,
+		"pickup_size": 48.0,
+		"position": Vector2(2048, 110),
+	},
+	{
+		"kind": &"water",
+		"texture": preload("res://assets/Spring/Water.png"),
+		"region": Rect2(56, 48, 104, 160),
+		"display_height": 32.0,
+		"pickup_size": 32.0,
+		"position": Vector2(2976, 124),
+	},
+]
+
+## On open ground near the right-hand end, with nothing overhead, past the water.
+const STAGE_2_POT_POSITION := Vector2(3456, 560)
+
+## The camera follows the cats only in a level wider than one screen. It never
+## moves vertically, because every level is exactly one screen tall.
+const CAMERA_Y := 360.0
+## The same easing Autumn and Winter use. See _follow_players.
+const CAMERA_SMOOTHING := 8.0
+
+## Which of Spring's two levels this is. Level.tscn leaves it at 1;
+## SpringLevel2.tscn sets it to 2.
+@export_range(1, 2) var stage: int = 1
 
 ## How long the Level Complete banner waits after the pot becomes a flower, so
 ## the flower is clearly visible on its own first. 1.5s sits in the middle of the
@@ -104,15 +181,48 @@ const SUMMER_SCENE := "res://scenes/SummerLevel.tscn"
 @onready var walls: Node2D = $Walls
 @onready var garden: Node2D = $Garden
 @onready var players: Node2D = $Players
-@onready var level_complete_banner: Sprite2D = $LevelComplete
-@onready var next_level_button: TextureButton = $NextLevel
+@onready var camera: Camera2D = $Camera2D
+# Found by unique name (%), not by path: level 1 keeps these straight under the
+# root, but level 2 scrolls, so it keeps them in a UI layer that stays on screen.
+@onready var level_complete_banner: Sprite2D = %LevelComplete
+@onready var next_level_button: TextureButton = %NextLevel
 
 ## Counts down to the banner appearing. Negative means nothing is pending.
 var _banner_timer: float = -1.0
 var _banner_shown: bool = false
 
+## The layout actually built. They start as level 1's tables, and _ready swaps
+## in level 2's when `stage` is 2.
+var level_width: int = LEVEL_WIDTH
+var world_columns: int = COLUMN_COUNT
+var platform_rows: Array = PLATFORM_ROWS
+var garden_items: Array = GARDEN_ITEMS
+var pot_position: Vector2 = POT_POSITION
+## The camera's smoothed position, kept unrounded. See _follow_players.
+var _camera_x: float = 0.0
+
 
 func _ready() -> void:
+	# The Spring 1 transition test presses Next Level and then needs to prove it
+	# arrived in Spring 2. With this user argument, level 2 says so and quits.
+	if stage == 2 and OS.get_cmdline_user_args().has("--spring2-check"):
+		print("NEXT LEVEL REACHED SPRING 2")
+		get_tree().quit(0)
+		return
+	# And the same for arriving in Spring 1 from the story intro or the ending.
+	if stage == 1 and OS.get_cmdline_user_args().has("--spring-check"):
+		print("NEXT LEVEL REACHED SPRING")
+		get_tree().quit(0)
+		return
+
+	if stage == 2:
+		level_width = STAGE_2_WIDTH
+		world_columns = STAGE_2_COLUMN_COUNT
+		platform_rows = STAGE_2_PLATFORM_ROWS
+		garden_items = STAGE_2_GARDEN_ITEMS
+		pot_position = STAGE_2_POT_POSITION
+	camera.limit_right = level_width
+
 	# The Next Level button belongs to the completion screen and nowhere else, so
 	# it is forced hidden and inert here as well as in the scene file. `disabled`
 	# only stops clicks; the picture still draws while a button is disabled, so
@@ -130,15 +240,21 @@ func _ready() -> void:
 	_build_players()
 	_build_garden()
 
+	# Put the camera on the cats straight away, so a long level does not open with
+	# the view sweeping in from somewhere else.
+	if level_width > LEVEL_WIDTH:
+		_camera_x = _players_centre().x
+		camera.global_position = Vector2(roundf(_camera_x), CAMERA_Y)
+
 
 func _build_ground() -> void:
 	for row_offset in GROUND_ROW_COUNT:
-		for column in COLUMN_COUNT:
+		for column in world_columns:
 			_add_tile(column, GROUND_ROW + row_offset, row_offset > 0)
 
 
 func _build_platforms() -> void:
-	for platform in PLATFORM_ROWS:
+	for platform in platform_rows:
 		var row: int = platform[0]
 		var first_column: int = platform[1]
 		var column_count: int = platform[2]
@@ -155,7 +271,7 @@ func _add_tile(column: int, row: int, buried: bool) -> void:
 
 func _build_walls() -> void:
 	_add_wall(Rect2(0, 0, WALL_WIDTH, LEVEL_HEIGHT))
-	_add_wall(Rect2(LEVEL_WIDTH - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
+	_add_wall(Rect2(level_width - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
 
 
 func _add_wall(rect: Rect2) -> void:
@@ -222,9 +338,39 @@ func _process(delta: float) -> void:
 	for index in ordered.size():
 		ordered[index].z_index = index
 
+	# Only a level wider than one screen scrolls. Level 1 is exactly one screen,
+	# so its camera never moves at all.
+	if level_width > LEVEL_WIDTH:
+		_follow_players(delta)
+
+
+## The middle of the two cats, which the one shared camera follows.
+func _players_centre() -> Vector2:
+	var sum := Vector2.ZERO
+	var count := 0
+	for child in players.get_children():
+		if child is Player:
+			sum += (child as Player).global_position
+			count += 1
+	if count == 0:
+		return Vector2(level_width * 0.5, CAMERA_Y)
+	return sum / float(count)
+
+
+## Moves the camera towards the middle of the two cats and keeps it on whole
+## pixels. This is Autumn's camera (see AutumnLevel._follow_foxes for the full
+## story): the tiles are pixel art drawn 1:1, and a camera sitting on a fraction
+## of a pixel opens thin white lines between them as it pans. The easing is the
+## same as the engine's own smoothing; only the rounding is added.
+func _follow_players(delta: float) -> void:
+	var target_x: float = _players_centre().x
+	var weight: float = 1.0 - exp(-CAMERA_SMOOTHING * delta)
+	_camera_x = lerpf(_camera_x, target_x, weight)
+	camera.global_position = Vector2(roundf(_camera_x), CAMERA_Y)
+
 
 func _build_garden() -> void:
-	for item in GARDEN_ITEMS:
+	for item in garden_items:
 		var garden_item := ITEM_SCENE.instantiate() as GardenItem
 		garden_item.item_kind = item["kind"]
 		garden_item.item_texture = item["texture"]
@@ -235,7 +381,7 @@ func _build_garden() -> void:
 		garden.add_child(garden_item)
 
 	var pot := POT_SCENE.instantiate() as PlantPot
-	pot.position = POT_POSITION
+	pot.position = pot_position
 	pot.level_complete.connect(_on_level_complete)
 	garden.add_child(pot)
 
@@ -272,9 +418,10 @@ func _reveal_banner() -> void:
 	next_level_button.disabled = false
 
 
-## The only door out of a finished Spring. Clicking/tapping the Next Level
-## picture loads the Summer scene, which is still only a placeholder: the point
-## of this is to make "Spring Complete -> Next Level -> Summer" work, not to
-## build Summer's rubbish/sorting game yet.
+## The only door out of a finished Spring level. Level 1 leads to level 2, and
+## level 2 leads on to Summer.
 func _on_next_level_pressed() -> void:
-	get_tree().change_scene_to_file(SUMMER_SCENE)
+	if stage == 1:
+		get_tree().change_scene_to_file(STAGE_2_SCENE)
+	else:
+		get_tree().change_scene_to_file(SUMMER_SCENE)

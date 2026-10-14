@@ -270,6 +270,91 @@ const FRAME_SCENE := preload("res://scenes/LeafFrame.tscn")
 ## closes the loop. See PROGRESS.md.
 const NEXT_SCENE := "res://scenes/WinterLevel.tscn"
 
+## --- Autumn 2 -----------------------------------------------------------------
+## Autumn has two levels, and both use this script. Level 1 is AutumnLevel.tscn,
+## the long walk above. Level 2 is AutumnLevel2.tscn, which sets `stage = 2` and
+## gets the tables below instead: a short level that fits on one screen, with
+## three leaves and three frames. Level 1's tables above are left exactly as they
+## were.
+##
+## The Next Level button of level 1 goes to level 2, and level 2's goes to Winter
+## (NEXT_SCENE, which still means "the next season").
+const STAGE_2_SCENE := "res://scenes/AutumnLevel2.tscn"
+
+## One screen: 20 columns of 64px.
+const STAGE_2_WIDTH := 1280
+const STAGE_2_COLUMN_COUNT := 20
+
+## [row, first column, how many columns]. A low shelf (top at y 448) and, next
+## to it, a high shelf (top at y 336), sharing an edge, on the left half of the
+## screen. The right half is open floor for the frames.
+const STAGE_2_PLATFORM_ROWS := [
+	[8, 5, 3],     # low shelf     x 320..512   surface 448
+	[6, 8, 3],     # high shelf    x 512..704   surface 336
+]
+
+## [x] - decoration only, as in level 1.
+const STAGE_2_TREES := [40.0, 260.0]
+
+## The three leaves. A fox sweeps its body from S-52 up to about S-186 when it
+## jumps from a surface at y = S, and a fox on its friend's head reaches about
+## S-238.
+## - Leaf 1 (box 398..442) floats above the floor near the start: one jump.
+## - Leaf 3 (box 308..352) is above the low shelf (448); from the floor a jump
+##   only reaches 374, so it needs the shelf.
+## - Leaf 2 (box 108..140) is above the high shelf (336), where one jump only
+##   reaches 150. It takes two: one fox on the other's head. Its box is 32px, like
+##   Spring's water, which leaves a clear margin either way.
+const STAGE_2_LEAVES := [
+	{
+		"kind": &"leaf1",
+		"texture": preload("res://assets/Autumn/Leaf1.png"),
+		"region": Rect2(2, 6, 25, 24),
+		"position": Vector2(96, 420),
+	},
+	{
+		"kind": &"leaf3",
+		"texture": preload("res://assets/Autumn/Leaf3.png"),
+		"region": Rect2(4, 2, 23, 28),
+		"position": Vector2(416, 330),
+	},
+	{
+		"kind": &"leaf2",
+		"texture": preload("res://assets/Autumn/Leaf2.png"),
+		"region": Rect2(2, 2, 25, 25),
+		"position": Vector2(608, 124),
+		"pickup_size": 32.0,
+	},
+]
+
+## The three frames, standing on the floor on the right, 180px apart. Each is
+## drawn about 174px wide, so they just clear each other and the right-hand
+## wall, and their 84px boxes leave 96px of floor between them: more than a
+## fox's 60px, so a fox can never be in two at once. Again not in leaf order.
+const STAGE_2_FRAMES := [
+	{
+		"frame": "Leaf_frame3",
+		"kind": &"leaf3",
+		"x": 815.0,
+	},
+	{
+		"frame": "Leaf_frame1",
+		"kind": &"leaf1",
+		"x": 995.0,
+	},
+	{
+		"frame": "Leaf_frame2",
+		"kind": &"leaf2",
+		"x": 1175.0,
+	},
+]
+## Level 2's frames stand on the floor itself, not on a terrace.
+const STAGE_2_FRAME_Y := 560.0
+
+## Which of Autumn's two levels this is. AutumnLevel.tscn leaves it at 1;
+## AutumnLevel2.tscn sets it to 2.
+@export_range(1, 2) var stage: int = 1
+
 ## How long the Level Complete banner waits after the last leaf is placed, so the
 ## filled frames are visible on their own first. Same as Spring and Summer.
 @export_range(0.0, 5.0, 0.1) var complete_banner_delay: float = 1.5
@@ -316,16 +401,47 @@ var _placed: Dictionary = {}
 ## level and its frames cannot disagree about what "finished" means.
 var _required_kinds: Array[StringName] = []
 
+## The layout actually built. They start as level 1's tables, and _ready swaps
+## in level 2's when `stage` is 2.
+var level_width: int = LEVEL_WIDTH
+var world_columns: int = COLUMN_COUNT
+var platform_rows: Array = PLATFORM_ROWS
+var tree_spots: Array = TREES
+var leaf_table: Array = LEAVES
+var frame_table: Array = FRAMES
+## Level 1's frames stand on a raised terrace; level 2 has none.
+var has_terrace: bool = true
+var frame_y: float = TERRACE_SURFACE_Y
+
 
 func _ready() -> void:
 	# The Summer transition test drives a real scene change and then needs to
 	# prove it arrived in Autumn. When run with that user argument, say so and quit
 	# instead of building the level - exactly what SummerLevel does for Spring's
 	# own transition test.
-	if OS.get_cmdline_user_args().has("--autumn-check"):
+	var args := OS.get_cmdline_user_args()
+	if stage == 1 and args.has("--autumn-check"):
 		print("NEXT LEVEL REACHED AUTUMN")
 		get_tree().quit(0)
 		return
+	# And the same again for arriving in Autumn 2 from Autumn 1.
+	if stage == 2 and args.has("--autumn2-check"):
+		print("NEXT LEVEL REACHED AUTUMN 2")
+		get_tree().quit(0)
+		return
+
+	if stage == 2:
+		level_width = STAGE_2_WIDTH
+		world_columns = STAGE_2_COLUMN_COUNT
+		platform_rows = STAGE_2_PLATFORM_ROWS
+		tree_spots = STAGE_2_TREES
+		leaf_table = STAGE_2_LEAVES
+		frame_table = STAGE_2_FRAMES
+		has_terrace = false
+		frame_y = STAGE_2_FRAME_Y
+	# The camera's limits are the world's own edges. Level 2 is exactly one
+	# screen wide, so its camera simply never moves.
+	camera.limit_right = level_width
 
 	# The Next Level button belongs to the completion screen and nowhere else. The
 	# scene hides it and this hides it again, for the same reason as in Spring and
@@ -336,11 +452,12 @@ func _ready() -> void:
 	next_level_button.disabled = true
 	next_level_button.pressed.connect(_on_next_level_pressed)
 
-	for entry in FRAMES:
+	for entry in frame_table:
 		_required_kinds.append(entry["kind"])
 
 	_build_ground()
-	_build_terrace()
+	if has_terrace:
+		_build_terrace()
 	_build_platforms()
 	_build_walls()
 	_build_trees()
@@ -365,7 +482,7 @@ func _foxes_centre() -> Vector2:
 			sum += (child as Player).global_position
 			count += 1
 	if count == 0:
-		return Vector2(LEVEL_WIDTH * 0.5, CAMERA_Y)
+		return Vector2(level_width * 0.5, CAMERA_Y)
 	return sum / float(count)
 
 
@@ -375,7 +492,7 @@ func _foxes_centre() -> Vector2:
 ## landing somewhere you can walk off again.
 func _build_ground() -> void:
 	for row_offset in GROUND_ROW_COUNT:
-		for column in COLUMN_COUNT:
+		for column in world_columns:
 			_add_tile(column, GROUND_ROW + row_offset, row_offset > 0)
 
 
@@ -386,7 +503,7 @@ func _build_terrace() -> void:
 
 
 func _build_platforms() -> void:
-	for platform in PLATFORM_ROWS:
+	for platform in platform_rows:
 		var row: int = platform[0]
 		var first_column: int = platform[1]
 		var column_count: int = platform[2]
@@ -408,7 +525,7 @@ func _add_tile(column: int, row: int, buried: bool) -> void:
 
 func _build_walls() -> void:
 	_add_wall(Rect2(0, 0, WALL_WIDTH, LEVEL_HEIGHT))
-	_add_wall(Rect2(LEVEL_WIDTH - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
+	_add_wall(Rect2(level_width - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
 
 
 func _add_wall(rect: Rect2) -> void:
@@ -443,7 +560,7 @@ func _add_wall(rect: Rect2) -> void:
 ## StaticBody2D and nothing else a fox could bump into or stand on. There is
 ## deliberately no collision branch here any more: the trees are scenery.
 func _build_trees() -> void:
-	for tree_x: float in TREES:
+	for tree_x: float in tree_spots:
 		var tree := Node2D.new()
 		tree.z_index = TREE_BACK_Z
 		tree.position = Vector2(tree_x, GROUND_ROW * TILE_HEIGHT)
@@ -484,13 +601,13 @@ func _build_players() -> void:
 ## already has the guarantee Autumn needs most: a leaf that has been placed is taken
 ## out of the level for good and can never be picked up again where it was found.
 func _build_leaves() -> void:
-	for item in LEAVES:
+	for item in leaf_table:
 		var leaf := ITEM_SCENE.instantiate() as GardenItem
 		leaf.item_kind = item["kind"]
 		leaf.item_texture = item["texture"]
 		leaf.art_region = item["region"]
 		leaf.display_height = LEAF_DISPLAY_HEIGHT
-		leaf.pickup_size = LEAF_PICKUP_SIZE
+		leaf.pickup_size = item.get("pickup_size", LEAF_PICKUP_SIZE)
 		leaf.position = item["position"]
 		leaves.add_child(leaf)
 
@@ -499,14 +616,14 @@ func _build_leaves() -> void:
 ## artwork and in the leaf that artwork belongs to. There is no label, no number
 ## and no wording anywhere on them: which leaf a frame takes is only visible.
 func _build_frames() -> void:
-	for entry in FRAMES:
+	for entry in frame_table:
 		var art_name: String = entry["frame"]
 		var art: Dictionary = FRAME_ART[art_name]
 		var kind: StringName = entry["kind"]
 
 		var leaf_texture: Texture2D = null
 		var leaf_region := Rect2()
-		for leaf in LEAVES:
+		for leaf in leaf_table:
 			if leaf["kind"] == kind:
 				leaf_texture = leaf["texture"]
 				leaf_region = leaf["region"]
@@ -521,7 +638,7 @@ func _build_frames() -> void:
 		frame.leaf_region = leaf_region
 		frame.display_height = FRAME_DISPLAY_HEIGHT
 		frame.box_width = FRAME_BOX_WIDTH
-		frame.position = Vector2(entry["x"], TERRACE_SURFACE_Y)
+		frame.position = Vector2(entry["x"], frame_y)
 		frame.leaf_placed.connect(_on_leaf_placed)
 		frame.wrong_leaf.connect(_on_wrong_leaf)
 		frames.add_child(frame)
@@ -638,7 +755,10 @@ func _on_wrong_leaf(_held_kind: StringName, _frame_kind: StringName) -> void:
 	_wrong_leaf_timer = wrong_leaf_notice_time
 
 
-## The only door out of a finished Autumn. Winter does not exist yet, so this
-## returns to Spring rather than leaving a finished Autumn as a dead end.
+## The only door out of a finished Autumn level. Level 1 leads to level 2, and
+## level 2 leads on to Winter.
 func _on_next_level_pressed() -> void:
-	get_tree().change_scene_to_file(NEXT_SCENE)
+	if stage == 1:
+		get_tree().change_scene_to_file(STAGE_2_SCENE)
+	else:
+		get_tree().change_scene_to_file(NEXT_SCENE)

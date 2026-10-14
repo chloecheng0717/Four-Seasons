@@ -1,0 +1,163 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/Ending.gd" id="1_ending_script"]
+
+[node name="Ending" type="Node2D"]
+script = ExtResource("1_ending_script")
+
+[node name="Seasons" type="Node2D" parent="."]
+
+[node name="Finale" type="Node2D" parent="."]
+modulate = Color(1, 1, 1, 0)
+
+[node name="Confetti" type="Node2D" parent="."]
+modulate = Color(1, 1, 1, 0)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Caption" type="PanelContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 300.0
+offset_top = 36.0
+offset_right = 980.0
+offset_bottom = 250.0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/Caption"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 22
+
+[node name="Rows" type="VBoxContainer" parent="UI/Root/Caption/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Badge" type="Label" parent="UI/Root/Caption/Margin/Rows"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"SeasonBadge"
+text = "Spring · Cats"
+horizontal_alignment = 1
+
+[node name="Achievement" type="Label" parent="UI/Root/Caption/Margin/Rows"]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "The cats grew a flower, and the garden came back to life."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Fact" type="Label" parent="UI/Root/Caption/Margin/Rows"]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Did you know? Plants hold soil in place and give food and shelter to small animals."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Goal" type="Label" parent="UI/Root/Caption/Margin/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "SDG 15 · Life on Land"
+horizontal_alignment = 1
+
+[node name="SkipHint" type="Label" parent="UI/Root"]
+layout_mode = 0
+offset_left = 900.0
+offset_top = 680.0
+offset_right = 1260.0
+offset_bottom = 708.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.23, 0.45, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 16
+text = "Press Enter or click to skip"
+horizontal_alignment = 2
+
+[node name="FinaleBox" type="CenterContainer" parent="UI/Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -200.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/Root/FinaleBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/FinaleBox/Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
+
+[node name="Rows" type="VBoxContainer" parent="UI/Root/FinaleBox/Panel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="UI/Root/FinaleBox/Panel/Margin/Rows"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Congratulations!"
+horizontal_alignment = 1
+
+[node name="Story" type="Label" parent="UI/Root/FinaleBox/Panel/Margin/Rows"]
+custom_minimum_size = Vector2(700, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "The wheel of the year is turning again. You brought back all four seasons!"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Message" type="Label" parent="UI/Root/FinaleBox/Panel/Margin/Rows"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+theme_override_font_sizes/font_size = 26
+text = "Together, small actions make a big difference."
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="UI/Root/FinaleBox/Panel/Margin/Rows"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="PlayAgain" type="Button" parent="UI/Root/FinaleBox/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Play again"
+
+[node name="BackToTitle" type="Button" parent="UI/Root/FinaleBox/Panel/Margin/Rows/Buttons"]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+text = "Back to title"
+
+[node name="Fade" type="ColorRect" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

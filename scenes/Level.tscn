@@ -51,6 +51,7 @@ theme_override_font_sizes/font_size = 16
 text = "Spring: carry the soil, the seeds and the water to the pot, in that order."
 
 [node name="LevelComplete" type="Sprite2D" parent="." unique_id=1249968453]
+unique_name_in_owner = true
 visible = false
 z_index = 100
 texture_filter = 1
@@ -61,6 +62,7 @@ region_enabled = true
 region_rect = Rect2(16, 0, 472, 256)
 
 [node name="NextLevel" type="TextureButton" parent="." unique_id=2099890819]
+unique_name_in_owner = true
 visible = false
 z_index = 101
 offset_left = 948.0

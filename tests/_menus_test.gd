@@ -19,6 +19,13 @@ const LEVELS := {
 	"autumn": preload("res://scenes/AutumnLevel.tscn"),
 	"winter": preload("res://scenes/WinterLevel.tscn"),
 }
+## Every season's second level has its own pause menu too.
+const LEVEL_2S := {
+	"spring": preload("res://scenes/SpringLevel2.tscn"),
+	"summer": preload("res://scenes/SummerLevel2.tscn"),
+	"autumn": preload("res://scenes/AutumnLevel2.tscn"),
+	"winter": preload("res://scenes/WinterLevel2.tscn"),
+}
 const TEST_SETTINGS_PATH := "user://_menus_test_settings.cfg"
 
 var failures: Array[String] = []
@@ -43,6 +50,7 @@ func _run() -> void:
 	await _test_title_screen()
 	for season in SeasonTheme.ORDER:
 		await _test_pause_menu(season)
+		await _test_pause_menu(season, 2)
 	await _test_pause_really_stops_play()
 	await _test_esc_key()
 	await _test_text_size()
@@ -148,8 +156,12 @@ func _test_title_screen() -> void:
 		names == ["Play", "How to Play", "Settings", "Quit"], " got=%s" % str(names))
 	_check("Play is the highlighted button", title.play_button.theme_type_variation == &"PrimaryButton")
 	_check("the keyboard starts on Play", title.play_button.has_focus())
-	_check("Play is wired to start Spring",
+	# 2026-10-14: Play opens the story intro first, and the intro starts Spring.
+	_check("Play is wired to start the story intro, which starts Spring",
 		title.play_button.pressed.is_connected(title._on_play_pressed)
+		and TitleScreen.INTRO_SCENE == "res://scenes/StoryIntro.tscn"
+		and ResourceLoader.exists(TitleScreen.INTRO_SCENE)
+		and StoryIntro.SPRING_SCENE == TitleScreen.SPRING_SCENE
 		and TitleScreen.SPRING_SCENE == "res://scenes/Level.tscn"
 		and ResourceLoader.exists(TitleScreen.SPRING_SCENE))
 	_check("Quit is wired to quit", title.quit_button.pressed.is_connected(title._on_quit_pressed))
@@ -245,10 +257,10 @@ func _test_title_screen() -> void:
 
 # --- 4. The pause menu in every level ---------------------------------------
 
-func _test_pause_menu(season: String) -> void:
+func _test_pause_menu(season: String, stage: int = 1) -> void:
 	_emit("")
-	_emit("=== 4. %s: the pause menu ===" % season)
-	var level: Node = LEVELS[season].instantiate()
+	_emit("=== 4. %s %d: the pause menu ===" % [season, stage])
+	var level: Node = (LEVELS[season] if stage == 1 else LEVEL_2S[season]).instantiate()
 	add_child(level)
 	await _frames(3)
 

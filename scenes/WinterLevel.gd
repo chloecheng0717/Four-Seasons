@@ -156,7 +156,7 @@ const ICE_PATCHES := [
 ## built from, so the picture a penguin sees and the surface it slides on can never
 ## disagree about where the ice is.
 func _is_ice(column: int, row: int) -> bool:
-	for patch in ICE_PATCHES:
+	for patch in ice_patches:
 		var patch_row: int = patch[0]
 		var first_column: int = patch[1]
 		var last_column: int = first_column + int(patch[2]) - 1
@@ -317,11 +317,67 @@ const ICICLES := [
 	[4096.0, 2],     # open right, off the ice run-up
 ]
 
-## Where the Next Level button goes once Winter is finished. Winter is a new scene
-## reached from nothing yet, so it returns to Spring rather than becoming a dead
-## end. See PROGRESS.md - wiring Autumn to Winter is a deliberate one-line change
-## that also moves one assertion in the Autumn suite, so it has not been made here.
-const NEXT_SCENE := "res://scenes/Level.tscn"
+## Where the Next Level button goes once Winter 2 is finished: the ending, which
+## congratulates the players and shows all four seasons. Its Play again button is
+## what takes them back to Spring.
+const NEXT_SCENE := "res://scenes/Ending.tscn"
+
+## --- Winter 2 -----------------------------------------------------------------
+## Winter has two levels, and both use this script. Level 1 is WinterLevel.tscn,
+## the long frozen corridor above. Level 2 is WinterLevel2.tscn, which sets
+## `stage = 2` and gets the tables below instead: a short level that fits on one
+## screen, with the same rules - two icicles, two fish, and the igloo, which only
+## counts once both fish are in and both penguins are standing in it. Level 1's
+## tables above are left exactly as they were.
+##
+## The Next Level button of level 1 goes to level 2, and level 2's goes to the
+## ending (NEXT_SCENE).
+const STAGE_2_SCENE := "res://scenes/WinterLevel2.tscn"
+
+## One screen: 20 columns of 64px.
+const STAGE_2_WIDTH := 1280
+const STAGE_2_COLUMN_COUNT := 20
+
+## [row, first column, how many columns]. A low shelf (top at y 448) and a high
+## shelf (top at y 336) beside it, sharing an edge, in the middle of the screen.
+## Nothing hangs over the two icicle corridors (x 400..500 and x 968..1064).
+const STAGE_2_PLATFORM_ROWS := [
+	[8, 9, 3],     # low shelf     x 576..768   surface 448
+	[6, 12, 3],    # high shelf    x 768..960   surface 336
+]
+
+## [row, first column, how many columns]. One patch on the floor under the low
+## shelf and one on the high shelf, and neither under an icicle.
+const STAGE_2_ICE_PATCHES := [
+	[10, 9, 3],    # floor, under the low shelf   x 576..768   surface 560
+	[6, 13, 2],    # on the high shelf            x 832..960   surface 336
+]
+
+## Both fish have the bottom of their box at y 362, 198px above the floor, which
+## one jump from the floor (up to 374) cannot reach - the same height as level 1.
+## - Fish 1 is above the low shelf (448), whose jump reaches up to 262: climb,
+##   then jump.
+## - Fish 2 is over open snow near the start, far from any shelf, so the only way
+##   up is for one penguin to stand on the other's head and jump (that reaches
+##   up to 322).
+const STAGE_2_FISHES := [
+	Vector2(640.0, 330.0),      # fish 1: above the low shelf
+	Vector2(230.0, 330.0),      # fish 2: over the snow near the start, stack required
+]
+
+## [x, artwork]. Icicle 1 is between the start and the shelves; icicle 2 is
+## between the high shelf and the igloo, so the walk home passes under it.
+const STAGE_2_ICICLES := [
+	[448.0, 1],
+	[1016.0, 1],
+]
+
+## On the floor at the right, clear of the second icicle and of the wall.
+const STAGE_2_IGLOO_POSITION := Vector2(1170.0, 560.0)
+
+## Which of Winter's two levels this is. WinterLevel.tscn leaves it at 1;
+## WinterLevel2.tscn sets it to 2.
+@export_range(1, 2) var stage: int = 1
 
 ## How long the Level Complete banner waits after the igloo is filled, so the two
 ## penguins standing in it are visible on their own first. Same as every other
@@ -378,16 +434,44 @@ var _spawn_positions: Array[Vector2] = []
 ## code and not read out of the scene.
 var igloo: Igloo = null
 
+## The layout actually built. They start as level 1's tables, and _ready swaps
+## in level 2's when `stage` is 2.
+var level_width: int = LEVEL_WIDTH
+var world_columns: int = COLUMN_COUNT
+var platform_rows: Array = PLATFORM_ROWS
+var ice_patches: Array = ICE_PATCHES
+var fishes: Array = FISHES
+var icicle_table: Array = ICICLES
+var igloo_position: Vector2 = IGLOO_POSITION
+
 
 func _ready() -> void:
 	# The season chain test drives a real scene change into Winter and then needs to
 	# prove it arrived. When run with that user argument, say so and quit instead of
 	# building the level - exactly what AutumnLevel does, and what SummerLevel does
 	# for Spring's own transition test.
-	if OS.get_cmdline_user_args().has("--winter-check"):
+	var args := OS.get_cmdline_user_args()
+	if stage == 1 and args.has("--winter-check"):
 		print("NEXT LEVEL REACHED WINTER")
 		get_tree().quit(0)
 		return
+	# And the same again for arriving in Winter 2 from Winter 1.
+	if stage == 2 and args.has("--winter2-check"):
+		print("NEXT LEVEL REACHED WINTER 2")
+		get_tree().quit(0)
+		return
+
+	if stage == 2:
+		level_width = STAGE_2_WIDTH
+		world_columns = STAGE_2_COLUMN_COUNT
+		platform_rows = STAGE_2_PLATFORM_ROWS
+		ice_patches = STAGE_2_ICE_PATCHES
+		fishes = STAGE_2_FISHES
+		icicle_table = STAGE_2_ICICLES
+		igloo_position = STAGE_2_IGLOO_POSITION
+	# The camera's limits are the world's own edges. Level 2 is exactly one
+	# screen wide, so its camera simply never moves.
+	camera.limit_right = level_width
 
 	# The Next Level button belongs to the completion screen and nowhere else. The
 	# scene hides it and this hides it again, for the same reason as in the other
@@ -423,7 +507,7 @@ func _penguins_centre() -> Vector2:
 			sum += (child as Player).global_position
 			count += 1
 	if count == 0:
-		return Vector2(LEVEL_WIDTH * 0.5, CAMERA_Y)
+		return Vector2(level_width * 0.5, CAMERA_Y)
 	return sum / float(count)
 
 
@@ -433,12 +517,12 @@ func _penguins_centre() -> Vector2:
 ## walk off again.
 func _build_ground() -> void:
 	for row_offset in GROUND_ROW_COUNT:
-		for column in COLUMN_COUNT:
+		for column in world_columns:
 			_add_tile(column, GROUND_ROW + row_offset, row_offset > 0)
 
 
 func _build_platforms() -> void:
-	for platform in PLATFORM_ROWS:
+	for platform in platform_rows:
 		var row: int = platform[0]
 		var first_column: int = platform[1]
 		var column_count: int = platform[2]
@@ -469,7 +553,7 @@ func _add_tile(column: int, row: int, buried: bool) -> void:
 
 func _build_walls() -> void:
 	_add_wall(Rect2(0, 0, WALL_WIDTH, LEVEL_HEIGHT))
-	_add_wall(Rect2(LEVEL_WIDTH - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
+	_add_wall(Rect2(level_width - WALL_WIDTH, 0, WALL_WIDTH, LEVEL_HEIGHT))
 
 
 func _add_wall(rect: Rect2) -> void:
@@ -524,7 +608,7 @@ func _build_players() -> void:
 ## what a hit does - the icicle detects its own player through its own Area2D and
 ## reports it, and this only listens.
 func _build_icicles() -> void:
-	for entry in ICICLES:
+	for entry in icicle_table:
 		var icicle := ICICLE_SCENE.instantiate() as Icicle
 		if int(entry[1]) == 1:
 			icicle.icicle_texture = ICICLE1_TEXTURE
@@ -555,7 +639,7 @@ func _build_igloo() -> void:
 	igloo.art_region = IGLOO_REGION
 	igloo.display_height = IGLOO_DISPLAY_HEIGHT
 	igloo.goal_size = IGLOO_GOAL_SIZE
-	igloo.position = IGLOO_POSITION
+	igloo.position = igloo_position
 	igloo.penguins_changed.connect(_on_penguins_at_igloo)
 	goals.add_child(igloo)
 
@@ -573,7 +657,7 @@ func _required_penguins() -> int:
 ## How many fish have to be collected. Read from the level's own table, so the goal and
 ## the fish can never disagree about how many of them there are.
 func _required_fish() -> int:
-	return FISHES.size()
+	return fishes.size()
 
 
 ## The two fish, and the reason the igloo does not count yet.
@@ -586,14 +670,14 @@ func _required_fish() -> int:
 ## The fish detect a penguin themselves and report it, and this only listens - exactly
 ## as it does for the icicles and the igloo.
 func _build_fish() -> void:
-	for index in FISHES.size():
+	for index in fishes.size():
 		var one := FISH_SCENE.instantiate() as Fish
 		one.fish_texture = FISH_TEXTURE
 		one.art_region = FISH_REGION
 		one.display_height = FISH_DISPLAY_HEIGHT
 		one.pickup_size = FISH_PICKUP_SIZE
 		one.fish_index = index
-		one.position = FISHES[index]
+		one.position = fishes[index]
 		one.collected.connect(_on_fish_collected)
 		fish.add_child(one)
 		_fish_nodes.append(one)
@@ -789,6 +873,10 @@ func _reveal_banner() -> void:
 	next_level_button.disabled = false
 
 
-## The only door out of a finished Winter.
+## The only door out of a finished Winter level. Level 1 leads to level 2, and
+## level 2 leads to the ending.
 func _on_next_level_pressed() -> void:
-	get_tree().change_scene_to_file(NEXT_SCENE)
+	if stage == 1:
+		get_tree().change_scene_to_file(STAGE_2_SCENE)
+	else:
+		get_tree().change_scene_to_file(NEXT_SCENE)

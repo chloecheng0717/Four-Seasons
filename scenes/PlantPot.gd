@@ -62,10 +62,22 @@ func _process(delta: float) -> void:
 
 	# Polled rather than driven by body_entered, so a cat that is already
 	# carrying the right thing can walk straight in and be served.
+	var cats: Array[Player] = []
 	for body in get_overlapping_bodies():
 		if body is Player:
-			_serve(body as Player)
+			cats.append(body as Player)
+	if cats.is_empty():
+		return
+
+	# A cat carrying exactly what the pot wants next is served first. In Spring 2
+	# the two cats bring the soil and the seeds to the pot together, and without
+	# this the cat holding the seeds could stand in the way of the soil until it
+	# walked off again. With only one cat here, this changes nothing.
+	for cat in cats:
+		if cat.carried_kind != &"" and cat.carried_kind == required_item():
+			_serve(cat)
 			return
+	_serve(cats[0])
 
 
 ## The item this stage is waiting for, or &"" when it is not waiting for one.

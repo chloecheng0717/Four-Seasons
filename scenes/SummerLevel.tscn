@@ -66,6 +66,7 @@ theme_override_font_sizes/font_size = 16
 text = "Summer: put the paper, the plastic and the glass into the matching bin."
 
 [node name="WrongBin" type="Label" parent="." unique_id=448286939]
+unique_name_in_owner = true
 visible = false
 z_index = 102
 offset_left = 440.0
@@ -79,6 +80,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelComplete" type="Sprite2D" parent="." unique_id=1643775234]
+unique_name_in_owner = true
 visible = false
 z_index = 100
 texture_filter = 1
@@ -89,6 +91,7 @@ region_enabled = true
 region_rect = Rect2(16, 0, 472, 256)
 
 [node name="NextLevel" type="TextureButton" parent="." unique_id=1551989352]
+unique_name_in_owner = true
 visible = false
 z_index = 101
 offset_left = 948.0

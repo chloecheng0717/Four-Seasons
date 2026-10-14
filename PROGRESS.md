@@ -1,6 +1,6 @@
 # PROGRESS — FourSeasons
 
-**Last updated:** 2026-10-08
+**Last updated:** 2026-10-14
 **Project root:** `C:\Users\Chloe Cheng\OneDrive\Documents\FourSeasons`
 **Engine:** Godot 4.7.2 stable (`4.7`, GL Compatibility renderer)
 
@@ -21,13 +21,21 @@ same movement, same ride/stack system, only the artwork changes.
 platforms for each other. One player can stand on the other's head, be carried
 around, and jump off.
 
-**Four seasons are playable and all four are in one loop.** Each has its own goal and
-its own completion screen, and the shared `Next Level` button chains one into the
-next:
+**Four seasons are playable, with two levels each, from a story intro to an
+ending.** Each level has its own goal and its own completion screen, and the shared
+`Next Level` button chains one into the next (2026-10-14, see §9):
 
 ```
-Spring -> Summer -> Autumn -> Winter -> Spring
+Title -> Story intro -> Spring 1 -> Spring 2 -> Summer 1 -> Summer 2 -> Autumn 1
+      -> Autumn 2 -> Winter 1 -> Winter 2 -> Ending -> (Play again -> Spring 1)
 ```
+
+Level 2 of a season uses the **same script** as level 1 with `stage = 2` set on its
+scene, which swaps in that script's `STAGE_2_*` tables. Spring and Summer were one
+screen, so their second levels are long (3840px, scrolling); Autumn and Winter were
+long, so their second levels are short (one screen). The story is told in a five-page
+intro after Play and closed by the ending, which recaps each season with its SDG fact
+and then congratulates the players with all four seasons on screen at once.
 
 **The game now opens on a title screen** (built 2026-10-08): Play, How to Play,
 Settings, Quit, over a background that cycles through the four seasons. Every
@@ -86,7 +94,13 @@ frames in a row on a raised terrace at the right-hand end. See §2.3.
 - Full movement, jumping, stacking, carrying, and player-to-player collision —
   identical in all three seasons, and unchanged by any of them.
 - Any finished season's completion screen shows the `Level Complete` picture and,
-  with it, a clickable `Next Level` button that loads the next season.
+  with it, a clickable `Next Level` button that loads the next level.
+- **Second levels (2026-10-14):** Spring 2 (long meadow, the water needs a stack),
+  Summer 2 (long beach, six pieces of rubbish, bins in the middle that take two
+  each), Autumn 2 (one screen, three leaves, three frames on the floor) and Winter 2
+  (one screen, two icicles, two fish, the igloo).
+- **Story intro and ending (2026-10-14):** `StoryIntro.tscn` after Play, and
+  `Ending.tscn` after Winter 2.
 
 ---
 
@@ -1173,11 +1187,19 @@ these exist yet.
 | `scenes/Igloo.tscn` | The Winter goal. `Area2D` with an `Art` `Sprite2D` and **no solid collider at all** — only a `CollisionShape2D` on the goal area itself, sized from `goal_size`. Deliberately not enterable-but-solid, so a penguin can never be trapped in it. |
 | `scenes/Fish.tscn` | One of Winter's two fish, reused twice. `Area2D` root with an `Art` `Sprite2D` and a `Pickup` `CollisionShape2D` built in code from `pickup_size`. On no collision layer, masking only the penguin layer. **Collecting hides it and turns its own monitoring off; it is never freed**, because an icicle hit has to be able to bring it back. |
 | `tests/_winter_test.tscn` | Test scene: wraps `tests/_winter_test.gd`. Not part of the game. In `tests/` for the same reason as Autumn's. |
-| `tests/_season_chain_test.tscn` | Test scene: wraps `tests/_season_chain_test.gd`. Not part of the game. Needs a `--autumn-check` or `--winter-check` user argument to run. |
+| `tests/_season_chain_test.tscn` | Test scene: wraps `tests/_season_chain_test.gd`. Not part of the game. Needs one destination flag: `--summer-check`, `--summer2-check`, `--autumn-check`, `--autumn2-check`, `--winter-check`, `--winter2-check` or `--ending-check`. |
 | `scenes/TitleScreen.tscn` | **Main scene since 2026-10-08.** The title (wireframe A): a `Seasons` `Node2D` that `TitleScreen.gd` fills with four season backgrounds in code, and a `UI` `CanvasLayer` with the title, season badge, Play / How to Play / Settings / Quit, a hidden How to Play panel and a hidden `SettingsMenu` instance. |
 | `scenes/PauseMenu.tscn` | The pause menu (wireframe C), **one instance in each of the four level scenes**, with `season` set on the node. A `CanvasLayer` (layer 50, `process_mode = Always`) holding the corner Pause button, the hidden overlay (Resume / Restart this season / Settings / Back to title, plus the inline "Go back to the title?" confirm) and a `SettingsMenu` instance. |
 | `scenes/SettingsMenu.tscn` | The settings panel (wireframe D): Music volume, Sound volume and Text size sliders, a Fullscreen check box, Back. Used by both the title and the pause menu. |
 | `tests/_menus_test.tscn` | Test scene: wraps `tests/_menus_test.gd`. Not part of the game. |
+| `scenes/SpringLevel2.tscn` | **Spring 2, 2026-10-14.** `Level.gd` with `stage = 2`: a 3840px meadow with a sky layer, a `Camera2D` limited to 0..3840, and the help labels, `LevelComplete` and `NextLevel` under a `UI` `CanvasLayer` so they stay on screen while it scrolls. Prints `NEXT LEVEL REACHED SPRING 2` under `--spring2-check`. |
+| `scenes/SummerLevel2.tscn` | **Summer 2, 2026-10-14.** `SummerLevel.gd` with `stage = 2`: a 3840px beach, `WrongBin`, `LevelComplete` and `NextLevel` under a `UI` `CanvasLayer`. `--summer2-check`. |
+| `scenes/AutumnLevel2.tscn` | **Autumn 2, 2026-10-14.** A copy of `AutumnLevel.tscn` with `stage = 2`, camera limit 1280 and its own goal line. `--autumn2-check`. |
+| `scenes/WinterLevel2.tscn` | **Winter 2, 2026-10-14.** A copy of `WinterLevel.tscn` with `stage = 2`, camera limit 1280, its own goal line, and a white outline on the help labels so they stay readable over the first icicle. `--winter2-check`. |
+| `scenes/StoryIntro.tscn` | **The story intro, 2026-10-14.** Play on the title loads it. A `Views` `Node2D` (the pictures, built in code) and a `UI` panel with the page text, the controls (last page only), Skip, a page counter and Next / Let's go!. |
+| `scenes/Ending.tscn` | **The ending, 2026-10-14.** Winter 2's Next Level loads it. `Seasons` (the recap scenes), `Finale` and `Confetti` (both built in code), and a `UI` layer with the recap caption, a skip hint, the finale panel (Congratulations!, Play again, Back to title) and a black `Fade`. `--ending-check`. |
+| `tests/_level2_test.tscn` | Test scene for `tests/_level2_test.gd`. Not part of the game. |
+| `tests/_story_ending_test.tscn` | Test scene for `tests/_story_ending_test.gd`. Not part of the game. Needs `-- --spring-check`. |
 | `_diag.tscn` | A leftover physics-trace diagnostic. Not part of the game; see §7. |
 
 ---
@@ -1186,34 +1208,38 @@ these exist yet.
 
 | Script | Purpose |
 |---|---|
-| `scenes/Level.gd` | Builds the entire level procedurally from constants: ground, platforms, walls, players, and the garden (three items plus the pot). Holds `PLAYER_SPAWNS` (per-player actions/texture/crop/spawn) and `GARDEN_ITEMS`. Every frame it sorts the players by y to set `z_index` so the lower cat draws behind. `_ready()` forces the `NextLevel` button hidden and disabled so it cannot appear during gameplay. `_on_level_complete()` starts the `complete_banner_delay` countdown that reveals the `LevelComplete` banner; `_reveal_banner()` shows the banner and the `NextLevel` button together, and `_on_next_level_pressed()` loads Summer (`SUMMER_SCENE`). Also holds `PLATFORM_ROWS`, `GROUND_ROW`, `POT_POSITION`, `TILE_WIDTH/HEIGHT`. |
-| `scenes/SummerLevel.gd` | Builds the whole Summer level in code from constants, the same way `Level.gd` builds Spring: sand ground (row 10, 20 columns, 3 rows) and three platform rows, the decorative sea, walls, two dogs, three pieces of rubbish and three bins **on the ground at y=560** (paper `(560,560)`, plastic `(860,560)`, glass `(1120,560)`). Holds `PLAYER_SPAWNS` (the dogs, cropped like the cats), `TRASH_ITEMS` (paper `(434,322)`, plastic bag `(752,200)`, glass bottle `(1136,230)`), `BINS` (each bin's kind, picture, crop and position), `PLATFORM_ROWS`, `wrong_bin_notice_time` (1.2s) and `complete_banner_delay` (1.5s, the same pause Spring uses). `_on_rubbish_sorted()` counts against the kinds taken from the bins themselves and calls `_finish_level()` on the last one; `_on_wrong_bin()` shows the `WrongBin` label and starts its timer; `_reveal_banner()` shows the banner and the Next Level button together; `_on_next_level_pressed()` loads `NEXT_SCENE`. **`NEXT_SCENE` is now `res://scenes/AutumnLevel.tscn`** — changed 2026-10-03, see §9. Also still quits 0 with `NEXT LEVEL REACHED SUMMER` under `--next-level-check`. |
-| `scenes/TrashBin.gd` | One Summer bin. The sorting rule, and nothing else: exports `accepts_kind`, `bin_texture`, `art_region`, `display_height`; crops its own picture and anchors it **bottom edge to its node** (`sprite.offset = (0, -region.height * 0.5)`, the same anchor `Player.gd` uses — the sprite is centred, so the old `(-width * 0.5, -height)` offset drew the artwork a whole `display_height` above the ground and half a width to the left); polls overlapping players every frame and serves **every** dog in the box, not just the first (the same way `PlantPot.gd` does, so a dog that walks in already carrying the right thing is served, and a stacked pair is never missed). The right kind calls `Player.consume_carried()`, sets `is_filled` and emits `rubbish_sorted`; the wrong kind emits `wrong_bin` and **takes nothing**; an empty dog is ignored. `drawn_rect()` reports the artwork's real screen pixels, read from `sprite.get_rect()` through the sprite's global transform. **The bin node stays in the level either way.** |
-| `scenes/AutumnLevel.gd` | Builds the whole Autumn level in code from constants, the same way `Level.gd` and `SummerLevel.gd` do: 302 tiles of autumn ground, eleven shelves, the raised terrace at columns 60-74, walls, ten **decoration-only** trees, four leaves, four frames on the terrace and two foxes. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `TREES`, `LEAVES`, `FRAMES`, `FRAME_ART`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0` and `NEXT_SCENE = res://scenes/WinterLevel.tscn`. `_foxes_centre()` is the midpoint of the two foxes; `_follow_foxes(delta)` does the smoothing **itself** with `1 - exp(-8 * delta)` and assigns `roundf()` to the camera x — see §9, 2026-10-03, and do not revert that to engine `position_smoothing`. `_on_leaf_placed()` counts against the kinds declared in its own `FRAMES` table and calls `_finish_level()` on the last one; `_on_wrong_leaf()` shows the shared notice; `_reveal_banner()` shows the banner and the Next Level button together. Also prints `NEXT LEVEL REACHED AUTUMN` and quits 0 under `--autumn-check`. |
+| `scenes/Level.gd` | **2026-10-14: also Spring 2** (`stage`, `STAGE_2_*` tables, layout vars, `_follow_players` camera only when wider than one screen, `%LevelComplete` / `%NextLevel` unique-name lookups, `--spring-check` / `--spring2-check`). Builds the entire level procedurally from constants: ground, platforms, walls, players, and the garden (three items plus the pot). Holds `PLAYER_SPAWNS` (per-player actions/texture/crop/spawn) and `GARDEN_ITEMS`. Every frame it sorts the players by y to set `z_index` so the lower cat draws behind. `_ready()` forces the `NextLevel` button hidden and disabled so it cannot appear during gameplay. `_on_level_complete()` starts the `complete_banner_delay` countdown that reveals the `LevelComplete` banner; `_reveal_banner()` shows the banner and the `NextLevel` button together, and `_on_next_level_pressed()` loads Summer (`SUMMER_SCENE`). Also holds `PLATFORM_ROWS`, `GROUND_ROW`, `POT_POSITION`, `TILE_WIDTH/HEIGHT`. |
+| `scenes/SummerLevel.gd` | **2026-10-14: also Summer 2** (same pattern as `Level.gd`; finishes on the number of **pieces** sorted, not kinds; bins get `capacity` 2; `--summer-check` is an alias of `--next-level-check`, `--summer2-check`). Builds the whole Summer level in code from constants, the same way `Level.gd` builds Spring: sand ground (row 10, 20 columns, 3 rows) and three platform rows, the decorative sea, walls, two dogs, three pieces of rubbish and three bins **on the ground at y=560** (paper `(560,560)`, plastic `(860,560)`, glass `(1120,560)`). Holds `PLAYER_SPAWNS` (the dogs, cropped like the cats), `TRASH_ITEMS` (paper `(434,322)`, plastic bag `(752,200)`, glass bottle `(1136,230)`), `BINS` (each bin's kind, picture, crop and position), `PLATFORM_ROWS`, `wrong_bin_notice_time` (1.2s) and `complete_banner_delay` (1.5s, the same pause Spring uses). `_on_rubbish_sorted()` counts against the kinds taken from the bins themselves and calls `_finish_level()` on the last one; `_on_wrong_bin()` shows the `WrongBin` label and starts its timer; `_reveal_banner()` shows the banner and the Next Level button together; `_on_next_level_pressed()` loads `NEXT_SCENE`. **`NEXT_SCENE` is now `res://scenes/AutumnLevel.tscn`** — changed 2026-10-03, see §9. Also still quits 0 with `NEXT LEVEL REACHED SUMMER` under `--next-level-check`. |
+| `scenes/TrashBin.gd` | **2026-10-14: `capacity` (default 1) and `sorted_count`; `is_filled` once full.** One Summer bin. The sorting rule, and nothing else: exports `accepts_kind`, `bin_texture`, `art_region`, `display_height`; crops its own picture and anchors it **bottom edge to its node** (`sprite.offset = (0, -region.height * 0.5)`, the same anchor `Player.gd` uses — the sprite is centred, so the old `(-width * 0.5, -height)` offset drew the artwork a whole `display_height` above the ground and half a width to the left); polls overlapping players every frame and serves **every** dog in the box, not just the first (the same way `PlantPot.gd` does, so a dog that walks in already carrying the right thing is served, and a stacked pair is never missed). The right kind calls `Player.consume_carried()`, sets `is_filled` and emits `rubbish_sorted`; the wrong kind emits `wrong_bin` and **takes nothing**; an empty dog is ignored. `drawn_rect()` reports the artwork's real screen pixels, read from `sprite.get_rect()` through the sprite's global transform. **The bin node stays in the level either way.** |
+| `scenes/AutumnLevel.gd` | **2026-10-14: also Autumn 2** (`stage`, `STAGE_2_*`, no terrace in level 2, a leaf may set its own `pickup_size`, `--autumn2-check`). Builds the whole Autumn level in code from constants, the same way `Level.gd` and `SummerLevel.gd` do: 302 tiles of autumn ground, eleven shelves, the raised terrace at columns 60-74, walls, ten **decoration-only** trees, four leaves, four frames on the terrace and two foxes. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `TREES`, `LEAVES`, `FRAMES`, `FRAME_ART`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0` and `NEXT_SCENE = res://scenes/WinterLevel.tscn`. `_foxes_centre()` is the midpoint of the two foxes; `_follow_foxes(delta)` does the smoothing **itself** with `1 - exp(-8 * delta)` and assigns `roundf()` to the camera x — see §9, 2026-10-03, and do not revert that to engine `position_smoothing`. `_on_leaf_placed()` counts against the kinds declared in its own `FRAMES` table and calls `_finish_level()` on the last one; `_on_wrong_leaf()` shows the shared notice; `_reveal_banner()` shows the banner and the Next Level button together. Also prints `NEXT LEVEL REACHED AUTUMN` and quits 0 under `--autumn-check`. |
 | `scenes/LeafFrame.gd` | One Autumn leaf frame, and the Autumn sorting rule. Deliberately the same shape as `TrashBin.gd` rather than something new: an `Area2D` that watches which foxes are standing in it, decides, and hands the leaf's fate back through the same two callables. Exports `accepts_kind`, `frame_texture`, `art_region`, `leaf_texture`, `leaf_region` and the silhouette size. The right leaf calls `Player.consume_carried()`, draws itself scaled to the silhouette inside the frame and emits `leaf_placed`; anything else emits `wrong_leaf` and **takes nothing**. **There is no `Label` on this scene** — no number, no wording, no colour; the frame says nothing at all. **A refused leaf is not put back**, exactly as in Summer. |
 | `scenes/Player.gd` | All cat behaviour: input, gravity, jumping, coyote/buffer, floor snap, artwork, facing, the ride/stack system, and carrying one gardening item. Tuning constants at the top (`SPEED`, `GRAVITY`, `JUMP_VELOCITY`, `COYOTE_TIME`, `JUMP_BUFFER`, `SUPPORT_GRACE`, `RIDE_CATCH`, `PLAYER_LAYER`, `CARRIED_ICON_HEIGHT`). Carrying is only `carried_kind`, `drop_carried()`, `consume_carried()` and `_clear_carrying()` — the movement and ride code below them is untouched. |
-| `scenes/WinterLevel.gd` | Builds the whole Winter level in code from constants, the same way the other three do: **265** tiles of snow, nine shelves, walls, six icicles, the igloo and two penguins. Twelve `ICE_PATCHES` covering 41 tiles (22 on the floor row, 19 on shelves), see §2.4. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `ICE_PATCHES`, `ICICLES`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0`, `RESET_PAUSE = 0.35` and `NEXT_SCENE = res://scenes/Level.tscn`. `_is_ice(column, row)` is read from the same `ICE_PATCHES` table the level is built from, so the picture a penguin sees and the surface it slides on cannot disagree. `_penguins_centre()` / `_follow_penguins()` are Autumn's camera, borrowed unchanged — the smoothing is done in the level with `1 - exp(-8 * delta)` so the result can be `roundf()`d, see §9 and **do not revert that to engine `position_smoothing`**. `_on_icicle_hit()` waits `RESET_PAUSE` so the player sees the icicle land, then puts both penguins on their own spawns, resets every icicle, empties the igloo and snaps the camera home. `_on_penguins_at_igloo()` counts against the number of players the level itself built, so the two cannot disagree about what "finished" means, and **also requires `_collected_fish` to hold both indexes** - so Winter cannot be finished without collecting, and cannot be finished by skipping the level. It then uses the same 1.5s `complete_banner_delay` as every other season. **Builds the two fish** from `FISHES` (`_build_fish()`, `_fish_nodes`, `_on_fish_collected()`, `_required_fish()`) and resets them in `_on_icicle_hit()`'s existing reset path - see §2.4. Also prints `NEXT LEVEL REACHED WINTER` and quits 0 under `--winter-check`, which is the arrival hook `tests/_season_chain_test.gd` uses to prove Autumn -> Winter really happens; it has no effect on normal play. |
+| `scenes/WinterLevel.gd` | **2026-10-14: also Winter 2** (`stage`, `STAGE_2_*`, `--winter2-check`); **`NEXT_SCENE` is now `res://scenes/Ending.tscn`**, reached from Winter 2. Builds the whole Winter level in code from constants, the same way the other three do: **265** tiles of snow, nine shelves, walls, six icicles, the igloo and two penguins. Twelve `ICE_PATCHES` covering 41 tiles (22 on the floor row, 19 on shelves), see §2.4. Holds `LEVEL_WIDTH = 4800`, `PLATFORM_ROWS`, `ICE_PATCHES`, `ICICLES`, `PLAYER_SPAWNS`, `CAMERA_Y = 360`, `CAMERA_SMOOTHING = 8.0`, `RESET_PAUSE = 0.35` and `NEXT_SCENE = res://scenes/Level.tscn`. `_is_ice(column, row)` is read from the same `ICE_PATCHES` table the level is built from, so the picture a penguin sees and the surface it slides on cannot disagree. `_penguins_centre()` / `_follow_penguins()` are Autumn's camera, borrowed unchanged — the smoothing is done in the level with `1 - exp(-8 * delta)` so the result can be `roundf()`d, see §9 and **do not revert that to engine `position_smoothing`**. `_on_icicle_hit()` waits `RESET_PAUSE` so the player sees the icicle land, then puts both penguins on their own spawns, resets every icicle, empties the igloo and snaps the camera home. `_on_penguins_at_igloo()` counts against the number of players the level itself built, so the two cannot disagree about what "finished" means, and **also requires `_collected_fish` to hold both indexes** - so Winter cannot be finished without collecting, and cannot be finished by skipping the level. It then uses the same 1.5s `complete_banner_delay` as every other season. **Builds the two fish** from `FISHES` (`_build_fish()`, `_fish_nodes`, `_on_fish_collected()`, `_required_fish()`) and resets them in `_on_icicle_hit()`'s existing reset path - see §2.4. Also prints `NEXT LEVEL REACHED WINTER` and quits 0 under `--winter-check`, which is the arrival hook `tests/_season_chain_test.gd` uses to prove Autumn -> Winter really happens; it has no effect on normal play. |
 | `scenes/Icicle.gd` | One icicle: four states (`HANGING`, `WARNING`, `FALLING`, `SPENT`), the shake, the fall and the one-shot hit. `WARNING_TIME = 0.9`, `FALL_GRAVITY = 1800`, `MAX_FALL_SPEED = 900`, `SHAKE_MAX = 5.0`, `SHAKE_HZ = 26.0`, `TRIGGER_WIDTH/HEIGHT = 150x160`. **The root and the ground zone never move** — only the inner `Moving` node is animated, and only it carries the hazard. `reset()` puts it back without a trigger ever being re-reported, and the state guards the start so a zone that is already being stood in cannot restart it. |
 | `scenes/Igloo.gd` | The Winter goal: crops and scales the igloo picture, and reports how many penguins are inside. It keeps its occupants in a **`Dictionary` keyed by body, not a counter**, so a penguin hovering on the edge cannot be counted twice and a stacked pair are both counted. No solid collider. Emits `penguins_changed(count)`. |
 | `scenes/GroundTile.gd` | Flips the tile sprite vertically when `buried` is true so the ground block looks filled in. Also applies the optional `surface_texture` / `surface_region` overrides, which is how Summer puts sand on the same tile scene, and the `slippery` flag Winter's ice sets. **All three default to Spring's values, so Spring, Summer and Autumn are unaffected.** |
 | `scenes/Fish.gd` | One fish: crops/scales the artwork uniformly, builds the 64x64 pickup box, and polls `get_overlapping_bodies()` each frame like `GardenItem` — but **does not free itself**. Emits `collected(index)`. **Three things to keep:** `_process` guards on `monitoring` as well as `is_collected`, because `reset()` re-enables monitoring deferred and there is one frame where neither is true; `art.offset` stays `Vector2.ZERO`, unlike `Igloo`, because a fish hangs in mid-air rather than standing on its node; and `_process` collects **any** overlapping penguin rather than gating on `Player.can_pick_up()`, because `_collect()` hands the fish to `Player.pick_up()` (visible in `CarriedIcon`, tracked in `Player._carried_fish`) and that would fill the penguin's hands and lock it out of the second, required fish — see §2.4. |
 | `scenes/Player.gd` | The shared player. **Winter added exactly one branch**: when the tile underfoot is `slippery`, horizontal movement uses `ICE_ACCELERATION = 900` / `ICE_DECELERATION = 260` instead of the usual `velocity.x = direction * SPEED`, which is left byte-for-byte as it was so no other season can be affected. Also added `reset_to_position()`, which clears velocity, timers, support and riders and restores the collision mask — the shared stacking state machine, not a Winter-only one — and `pick_up()`'s optional `item_node` argument plus `_carried_fish`, which is what lets a Winter fish be carried **without** becoming a second Spring-style item: `can_pick_up()` is unchanged, so Spring's one-item-to-the-pot rule is untouched. |
 | `scenes/GardenItem.gd` | One collectable. Crops and scales its picture, picks itself up when an empty-handed cat stands in it, and has the two ways out: `respawn()` puts itself back on its spawn point, `consume()` removes the node from the level for good. |
-| `scenes/PlantPot.gd` | The five pot stages, the one ordering rule, the wrong-item refusal and hand-back, the permanent consumption of an accepted item, the timed sprout growth, and the `level_complete` signal. All the pot artwork is a `const` table keyed by stage. |
+| `scenes/PlantPot.gd` | **2026-10-14: a cat carrying exactly what the pot wants is served first**, so two cats standing in the pot never block each other (Spring 2's co-op route); with one cat nothing changed. The five pot stages, the one ordering rule, the wrong-item refusal and hand-back, the permanent consumption of an accepted item, the timed sprout growth, and the `level_complete` signal. All the pot artwork is a `const` table keyed by stage. |
 | `_stack_walk_test.gd` | Automated regression suite (66 checks) for walking, carrying, riding off, stacked jumps, collisions, controls, facing, art, platforms. |
 | `_stack_jump_test.gd` | Automated regression suite (41 checks) for the original stacking/jump behaviour, separation, and re-stacking. |
 | `_garden_test.gd` | Automated regression suite (136 checks) for the Spring gardening mechanic, including used-up items being gone for good, the water needing both cats, carrying while stacked, the completion banner being the `Level Complete` picture rather than the old label, the `NextLevel` button sharing the completion screen (real `TextureButton`, right picture, **hidden and inert before the finish**, centre on screen, above the banner, unmoved by the reveal, **drawn at the picture's own size with a uniform scale so it cannot be stretched or squashed, and wholly inside the screen**), and the pause between the flower appearing and the banner turning up. |
-| `_next_level_test.gd` | Automated end-to-end suite (20 checks) for the season transition: a real Spring run to the flower, the completion pause, the banner and Next Level button appearing together, the button's `pressed` being wired to the level's handler, and then pressing it — the scene change frees the test and the built Summer level proves the arrival by printing `NEXT LEVEL REACHED SUMMER` and quitting 0. Never presses the button if any earlier check failed. |
+| `_next_level_test.gd` | **2026-10-14: Spring 1 now leads to Spring 2, so this runs with `-- --spring2-check` and expects `NEXT LEVEL REACHED SPRING 2`.** Automated end-to-end suite (20 checks) for the season transition: a real Spring run to the flower, the completion pause, the banner and Next Level button appearing together, the button's `pressed` being wired to the level's handler, and then pressing it — the scene change frees the test and the built Summer level proves the arrival by printing `NEXT LEVEL REACHED SUMMER` and quitting 0. Never presses the button if any earlier check failed. |
 | `_summer_test.gd` | Automated regression suite (**152 checks**) for Summer: the scene really is built and is not Spring, two dogs cropped to the dog art, the controls unchanged, sand on every tile, the sea is decoration only and drawn behind the level, three bins with three different pictures that do not touch, each standing on the ground with its artwork's bottom edge on the ground and centred over its own node, none drawn into a wall or on top of a dog, three pieces of rubbish each nearest its own bin, the completion screen and button hidden and inert at the start, dogs move/jump/face/stack on their own keys and can stack while carrying, **every piece of rubbish is really picked up by jumping for it from the shelf below it, solo and stacked**, **all six wrong-bin pairs are refused with a notice that clears itself**, each right bin sorts for good and the rubbish cannot be picked up again, and the completion screen only arrives after the third sort. The Next Level button is never pressed — pressing it would free the test — so its target is read from `NEXT_SCENE` instead. |
-| `scenes/TitleScreen.gd` | The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
+| `scenes/TitleScreen.gd` | **2026-10-14: the background builders are `static` (`build_season`, `build_four_seasons`, `add_faller`, `move_fallers`), shared with the intro and the ending; Play loads `INTRO_SCENE`.** The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
 | `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
 | `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
 | `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (no sounds exist yet; a sound put on those buses will follow the sliders). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
 | `scenes/SeasonTheme.gd` | `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
-| `tests/_menus_test.gd` | Automated suite (**171 checks, 7 sections**) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
+| `tests/_menus_test.gd` | Automated suite (**255 checks** since 2026-10-14, when the pause menu checks were extended to all eight levels and Play to the intro) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
+| `scenes/StoryIntro.gd` | `class_name StoryIntro`. Five `PAGES` (text, picture, season colours). Pictures come from `TitleScreen.build_season` / `build_four_seasons`; the "year has stopped" page is the four seasons tinted grey. Next turns the page, Let's go! / Skip / Esc call `start_game()` (loads `Level.tscn`). A page turned mid-fade kills the running fade first, so a late callback can never hide the current picture. |
+| `scenes/Ending.gd` | `class_name Ending`. A recap of four beats (`BEAT_TIME` 5.5s), one per season from `RECAP` (achievement, SDG fact, goal), then `show_finale()`: four season columns, confetti in the season colours, Congratulations!, Play again (`Level.tscn`) and Back to title. Enter / Esc / a click skips to the finale. |
+| `tests/_level2_test.gd` | Automated suite (**131 checks, 4 sections**) for the four second levels: stage-2 layout and width, walls, floor, camera scrolls (long) or stays still (short), UI layer for the long levels, **every collectable really taken by its intended route and really not from the place its comment says is out of reach**, wrong targets refused, finishing only after the last item, and each level's next scene. |
+| `tests/_story_ending_test.gd` | Automated suite (**45 checks**) for the intro and the ending; ends by pressing Let's go! for real, so Spring 1 prints `NEXT LEVEL REACHED SPRING`. Uses its own settings file. |
 | `_diag.gd` | Leftover one-off trace script used to debug the stacking bug. Prints a per-frame table and quits. Not part of the game. |
 | `tests/_winter_test.gd` | Automated regression suite (**140 checks, 12 sections**) for Winter. See §2.4 for what it covers. It reads its expectations back out of the level's own constants rather than hard-coding them, and it measures each tile's real opaque bounding box out of the PNG to prove no crop is cutting any of the artwork off — the check that catches a tile quietly losing its underside. Its fish checks derive the **real** jump rise from `Player.JUMP_VELOCITY` and `Player.GRAVITY` rather than trusting the nominal 128, and really jump for both fish rather than asserting coordinates. |
-| `tests/_season_chain_test.gd` | End-to-end suite (4 checks per leg) for the two chain legs no static check can cover. Run with `-- --autumn-check` it builds the real Summer, finishes it, proves the shared completion screen and button are up and wired, and calls the handler, so Autumn loads and quits 0. Run with `-- --winter-check` it does the same from Autumn, so Winter loads and quits 0. Also proves the button press actually changed the scene: the press frees the test, so a test still alive at 90s is itself the failure. With neither argument it fails in a second with the invocation it needs. |
+| `tests/_season_chain_test.gd` | **2026-10-14: now one leg per transition, seven legs, picked by the destination flag (see §4).** End-to-end suite (4 checks per leg) for the chain legs no static check can cover. Run with `-- --autumn-check` it builds the real Summer, finishes it, proves the shared completion screen and button are up and wired, and calls the handler, so Autumn loads and quits 0. Run with `-- --winter-check` it does the same from Autumn, so Winter loads and quits 0. Also proves the button press actually changed the scene: the press frees the test, so a test still alive at 90s is itself the failure. With neither argument it fails in a second with the invocation it needs. |
 | `tests/_autumn_test.gd` | Automated regression suite (**284 checks, 9 sections**) for Autumn. See §2.3 for what it covers. It reads its expectations back out of the level's own `get_script_constant_map()` rather than hard-coding them, so moving a leaf, frame or tree moves the expectations with it instead of letting the suite quietly test stale numbers. Its chain checks were **strengthened** on 2026-10-04 when Autumn began handing over to Winter — see §7. |
 
 ---
@@ -1608,6 +1634,17 @@ preserved anyway.
 
 These cost real time during the fix and will mislead anyone testing again:
 
+- **(2026-10-14) Headless process frames are not 1/60s.** A `--headless` run does
+  not cap the frame rate, so "wait 42 process frames" can be a few hundredths of a
+  second. Wait for real time (`create_timer`) when something runs on a Tween or a
+  `delta` timer, or wait physics frames, which are fixed at 60 per second.
+- **(2026-10-14) Do not compare against a node after it has been used up.** A
+  sorted rubbish or placed leaf is `queue_free()`d; comparing a loop variable to
+  that freed node matched a different leaf in `_level2_test`. Count instead.
+- **(2026-10-14) The garden suite's "it really did wait about as long as the pause
+  asked for" check can fail under load** (1.89s measured against 1.5s while 17 runs
+  shared the CPU). Run alone it passes at 1.54s. It is a wall-clock check, not a bug.
+
 - **GDScript lambdas capture local variables by value.** A `func():` assigned to
   a variable cannot write back to a plain local (e.g. a float). Use a one-
   element `Array` or a `Dictionary` instead. This silently made the first
@@ -1770,6 +1807,22 @@ These cost real time during the fix and will mislead anyone testing again:
 
 ## 8. Current Task / Next Task
 
+**2026-10-14 - NEXT TASK: play the whole game by hand, title to ending.** Every
+season now has two levels, Play opens a story intro, and Winter 2 ends in an ending
+animation (see §9, 2026-10-14). All of it is verified headless (12 suites, 1,299
+checks) and by real-renderer screenshots, but **nobody has played the new levels with
+a keyboard yet**. Things to watch for:
+1. **Spring 2:** is the stack for the water easy to find, and do the two cats really
+   end up carrying soil and seeds together, or does one cat do all the trips?
+2. **Summer 2:** six pieces with the bins in the middle - fun, or too much walking?
+   Is the Wrong bin! notice clear while the camera is moving?
+3. **Autumn 2 / Winter 2:** do they feel too short after the long first levels? Is the
+   Winter 2 walk home under the second icicle fair?
+4. **Story intro:** is it read, or skipped straight away? Is five pages too many?
+5. **Ending:** does the recap pace feel right (5.5s a season), and do the SDG facts
+   get read?
+6. Then the older checks below (Autumn camera seams, Winter fish routes) still apply.
+
 **DONE: the Spring gardening mechanic**, **the items are now used up for good**
 rather than going back where they were found, and **completing Spring now goes
 somewhere**: the `Level Complete` picture and the `Next Level` button appear
@@ -1846,6 +1899,89 @@ human.
 ---
 
 ## 9. Completed Work
+
+### 2026-10-14 - A second level for every season, a story intro and an ending
+
+Done on `C:\Users\Hp\Downloads\Four-Seasons`, Godot 4.7.2. The team asked for an extra
+level per season (long ones for Spring and Summer, which were one screen; short ones
+for Autumn and Winter, which were long), an ending animation that congratulates the
+players and shows the four seasons, and a story.
+
+**The new flow**
+`Title -> Story intro -> Spring 1 -> Spring 2 -> Summer 1 -> Summer 2 -> Autumn 1 ->
+Autumn 2 -> Winter 1 -> Winter 2 -> Ending -> (Play again -> Spring 1 | Back to title)`
+
+**How a second level is built - no new level scripts.** Each season script got
+`@export var stage := 1`, a block of `STAGE_2_*` tables next to its level-1 tables,
+and layout vars (`level_width`, `world_columns`, `platform_rows`, ...) that start as the
+level-1 tables and are swapped once at the top of `_ready()` when `stage == 2`. The
+builders read the vars. **The level-1 consts were not changed**, so every existing test
+that reads `PLATFORM_ROWS`, `LEVEL_WIDTH`, `FISHES` etc. still describes level 1. Each
+level 2 is its own `.tscn` (`SpringLevel2`, `SummerLevel2`, `AutumnLevel2`,
+`WinterLevel2`) with `stage = 2`. Level 1's Next Level goes to `STAGE_2_SCENE`; level 2's
+goes to the old next-season const, so `NEXT_SCENE` still means "the next season".
+
+**The four levels**
+- **Spring 2** (3840px, scrolls): soil above a low shelf, seeds at the top of a three-step
+  climb, water above a shelf where only a stacked jump reaches it, the pot near the end.
+- **Summer 2** (3840px, scrolls): six pieces of rubbish (two of each), three either side
+  of the bins, which stand in the middle and take two each; one glass needs a stack.
+- **Autumn 2** (one screen): three leaves (one from the floor, one from a shelf, one by
+  stacking) and three frames standing on the floor.
+- **Winter 2** (one screen): two icicles, two fish (shelf jump / stack), two ice patches,
+  the igloo; same "both fish + both penguins" goal and full reset as Winter 1.
+
+**Other code changes, each kept small**
+- Spring and Summer got Autumn's whole-pixel camera follow, run **only when the level is
+  wider than one screen**, so level 1 never moves its camera.
+- Level 2's banner/button/labels live in a `UI` `CanvasLayer` so they cannot scroll away;
+  the scripts now find them by unique name (`%LevelComplete`), and `Level.tscn` /
+  `SummerLevel.tscn` got `unique_name_in_owner` on those nodes and nothing else.
+- `TrashBin.capacity` (default 1) and `SummerLevel` finishing on pieces sorted, not kinds.
+- `PlantPot` serves a cat carrying exactly what it wants first. Found while designing
+  Spring 2: the pot only served the first cat in it, so a cat holding the seeds could
+  block the soil until it walked away. With one cat nothing changed (garden suite green).
+- `TitleScreen`'s background builders became `static` so the intro and ending reuse them
+  (`build_season`, new `build_four_seasons`, `add_faller`, `move_fallers`).
+- `WinterLevel.NEXT_SCENE` is now `res://scenes/Ending.tscn`.
+
+**The story** (intro + ending only, the team's choice). Built on proposal §6.1 with one
+thread added to tie the seasons together: *the wheel of the year has stopped*, and only
+the friends working together can set it turning. Five intro pages (the valley; the four
+groups of friends; the year has stopped - the four seasons faded grey; each season must
+be put right, and nobody can do it alone; two friends, one keyboard + the controls).
+Skip / Esc start Spring 1 at once. The ending closes it: "The wheel of the year is
+turning again."
+
+**The ending.** A recap of four 5.5s beats - each season's scene with a caption of what
+its friends did and its SDG fact from proposal Appendix C (SDG 15 / 12 / 15 / 13) - then
+the finale: the four seasons side by side, all eight animals hopping, confetti in the
+season colours, "Congratulations!", "Together, small actions make a big difference.",
+Play again and Back to title. Enter / Esc / click skips to the finale.
+
+**Testing** (this machine, Godot 4.7.2)
+- Baseline before any change: the ten suites green (1,018 checks; the garden pause
+  check failed once under parallel load and passed alone, see §7).
+- After: **12 suites, 1,299 checks, 0 failures** - stack walk 66, stack jump 41, garden
+  136, summer 152, autumn 284, winter 141, menus 255, next level 20, **level2 131**,
+  **story/ending 45**, and the chain test's **seven legs** x 4 (Spring 2 -> Summer ->
+  Summer 2 -> Autumn -> Autumn 2 -> Winter -> Winter 2 -> Ending). `--check-only` clean
+  on every changed or new script.
+- Test changes: `_next_level_test` now expects Spring 2 (`--spring2-check`); the chain test
+  takes the destination flag for any of the seven legs; Autumn's and Winter's suites now
+  expect Winter to end at the ending (and Winter 1 to lead to Winter 2) instead of
+  looping to Spring; the menus suite checks Play -> intro and the pause menu in all
+  eight levels.
+- **Negative checks:** moving Spring 2's water within one jump's reach fails
+  `_level2_test` ("the water is NOT taken by one jump"); putting the intro's old fade
+  code back fails `_story_ending_test` (fast page turns left no picture showing - a real
+  bug, fixed by killing the running fade on each page turn). Both restored, green.
+- **Real renderer:** a throwaway probe captured every level 2, all five intro pages, the
+  four recap beats and the finale. They looked right except Winter 2's goal line, which
+  ran behind the first icicle; its help labels got a white outline. The probe is deleted.
+- Winter's leak warnings at exit are unchanged (§7).
+
+**Not verified:** nobody has played any of this by hand. See §8.
 
 ### 2026-10-08 - Title screen, pause menu and settings, each in its season's colours
 

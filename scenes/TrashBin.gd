@@ -30,12 +30,18 @@ signal wrong_bin(held_kind: StringName, bin_kind: StringName)
 ## without this the bin would be drawn mostly air.
 @export var art_region: Rect2 = Rect2(48, 32, 160, 192)
 @export_range(48.0, 256.0, 1.0) var display_height: float = 112.0
+## How many pieces of rubbish this bin takes before it is full. Summer 1 has one
+## piece of each kind, so its bins take 1; Summer 2 has two of each, so its bins
+## take 2.
+@export_range(1, 10) var capacity: int = 1
 
 @onready var sprite: Sprite2D = $Bin
 @onready var bin_label: Label = $BinLabel
 
-## True once this bin has taken its rubbish. The bin itself stays in the level
-## either way; only the rubbish leaves.
+## How many pieces this bin has taken so far.
+var sorted_count: int = 0
+## True once this bin has taken all the rubbish it is waiting for (`capacity`).
+## The bin itself stays in the level either way; only the rubbish leaves.
 var is_filled: bool = false
 
 
@@ -93,7 +99,7 @@ func _serve(player: Player) -> void:
 		return
 
 	if is_filled:
-		# This bin has already had its one piece of rubbish. The bin stays in the
+		# This bin already has all the rubbish it takes. The bin stays in the
 		# level and takes nothing more.
 		return
 
@@ -102,7 +108,8 @@ func _serve(player: Player) -> void:
 	# takes the node out of the level instead of putting it back where it was
 	# found. Only the rubbish leaves; the bin does not move or disappear.
 	player.consume_carried()
-	is_filled = true
+	sorted_count += 1
+	is_filled = sorted_count >= capacity
 	rubbish_sorted.emit(accepts_kind)
 
 
