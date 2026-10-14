@@ -55,6 +55,9 @@ parallel. New test harnesses go in `tests/`.
   snowflakes).
 - Tests: 12 suites (the chain suite runs as 7 legs), **1,333 checks, 0 failures**
   (2026-10-14).
+- Git: everything is committed and **pushed** to `origin` =
+  `https://github.com/chloecheng0717/Four-Seasons.git`, branch `main` (`edaa590`,
+  2026-10-14). The other team PC must `git pull` before changing anything.
 - Known, pre-existing: the Winter suite prints leak warnings at exit (PROGRESS §7). It
   still passes; don't suppress the warnings.
 - **Nobody has played the game by hand yet.** All verification so far is headless or
@@ -63,7 +66,7 @@ parallel. New test harnesses go in `tests/`.
 ## Key decisions
 | Decision | Why |
 |---|---|
-| Menus follow the proposal wireframes (Figure 3 A/C/D) but use season colours: Spring `#6BBF67`, Summer `#F3B843`, Autumn `#E07A30`, Winter `#80B5E3`, navy `#1F3B73` | The team wanted the mockup's layout with the four-seasons theme; colours come from the proposal's screen-flow figure (`scenes/SeasonTheme.gd`) |
+| Menus follow the proposal wireframes (Figure 3 A/C/D) but use season colours: Spring `#6BBF67`, Summer `#F3B843`, Autumn `#E07A30`, Winter `#80B5E3`; since 2026-10-14 borders/text use each season's `DARK` colour instead of navy | The team wanted the mockup's layout with the four-seasons theme; colours come from the proposal's screen-flow figure (`scenes/SeasonTheme.gd`) |
 | `GameSettings` is `class_name` + `static var`s, not an autoload | Static vars survive scene changes; this keeps the project's no-autoload rule |
 | Saved settings are applied only when the level is `get_tree().current_scene` | Test suites build levels under a test node; a player's saved large text must not move what the tests measure |
 | `PauseMenu` is one instanced node per level scene, with `season` set on it | No level `.gd` changes; each level picks its own theme |
@@ -82,7 +85,8 @@ parallel. New test harnesses go in `tests/`.
 | Intro, ending and title share `TitleScreen`'s static season builders | No copied drawing code |
 | Pixel font: Pixelify Sans (OFL), set once as `[gui] theme/custom_font` | Readable in full sentences for 7-12s; Press Start 2P is too wide. Licence file must stay beside the font |
 | Font import: antialiasing ON, hinting/sub-pixel OFF, `liga`/`clig` ligatures OFF | Not a strict-grid font, so no-AA breaks small text; its fi/fl ligatures look like "A" |
-| Menu boxes: per-season dark/button/focus colours, chunky pixel buttons, panels = pixel-art frames from text pictures in `SeasonTheme.gd` | The team asked for seasonal boxes; text pictures can be redrawn without a drawing program. Decorations must stay in the corners unless they repeat every 4 art pixels |
+| Menu boxes: per-season dark/button/focus colours, chunky pixel buttons, panels = pixel-art frames from text pictures in `SeasonTheme.gd`; title buttons get corner pictures (`BUTTON_DECORATIONS`: flowers, starfish, maple leaves, blue snowflakes) | The team asked for seasonal boxes; text pictures can be redrawn without a drawing program. Frame decorations must stay in the corners unless they repeat every 4 art pixels |
+| Commits go straight on `main` (team practice), with no Claude attribution | The team's history is all on `main`; attribution rule is the user's |
 
 ## Gotchas that cost time
 - A headless run that prints **nothing** has a parse error; it isn't slow. Use `--check-only`.
@@ -104,6 +108,22 @@ parallel. New test harnesses go in `tests/`.
   `Snow Tile.png`, `Ice tile.png`. Winter tiles crop 64x64, the others 64x56.
 - More in `PROGRESS.md` §7 "Not bugs — gotchas when testing".
 
+## Working patterns
+- **Run everything after any change:** all suites plus the 7 chain legs, in parallel
+  (each `--scene` run in the background, then grep each log for `ALL CHECKS PASSED` /
+  `NEXT LEVEL REACHED` / `FAIL`).
+- **Look, don't trust the suites, for anything visual.** Write a throwaway
+  `tests/_probe_.gd` that loads a scene, triggers a state (pause, finish, season) and
+  saves `get_viewport().get_texture().get_image()` with the real renderer (no
+  `--headless`); delete it afterwards. No PIL/ImageMagick here: crop/zoom with a
+  throwaway `extends SceneTree` script (`Image.get_region` + `resize` NEAREST). The font
+  bugs and the invisible frame decorations were only caught this way.
+- **Negative-check new tests:** break the code on purpose, confirm the test fails,
+  restore it.
+- **Frame pictures (`SeasonTheme.gd`):** 24x24 art pixels at `PIXEL_SCALE` 5; the outer
+  4 are see-through and drawn outside the box; the outer 10 per side are drawn as-is and
+  the middle 4 repeat. Check new pictures with a script against that rule before use.
+
 ## The proposal vs the game
 The proposal promises more than is built. Built since: the story intro and an
 ending recap (with the SDG facts). Still missing: in-game HUD (season badge + checklist),
@@ -116,9 +136,11 @@ warning shadows and snow-mound checkpoints). The conclusion still says "Little S
 Ask which side should change, the game or the document.
 
 ## Next steps
+- [ ] On the other team PC: `git pull` first (4 new commits, 2026-10-14).
 - [ ] Play the whole game by hand, title → intro → all 8 levels → ending → Play again.
       PROGRESS §8 lists what to watch for in each new level.
 - [ ] Menus by hand: Play → Esc → Settings (drag Text size) → Back → Restart → Back to
       title → Quit. Also try fullscreen for real.
-- [ ] Decide which proposal gaps to close before the 2026-10-09 deadline, or reword the proposal.
+- [ ] Decide which proposal gaps to close, or reword the proposal. The 2026-10-09 deadline
+      has passed and nobody has said whether it moved; ask.
 - [ ] Manual checks still open from PROGRESS §8: the Autumn camera seams, the Winter fish routes, the whole season loop.
