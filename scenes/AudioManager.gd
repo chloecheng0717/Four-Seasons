@@ -9,13 +9,12 @@ extends Node
 ##
 ## The streams are loaded and checked at start-up: a sound whose file is missing
 ## is skipped with a warning instead of stopping the game. Play one with
-## AudioManager.play_click(), play_jump(), play_pickup() or play_keyboard().
+## AudioManager.play_click(), play_jump() or play_pickup().
 
 ## The file behind each sound name, the keys play_sfx() takes.
 const SOUND_PATHS := {
 	"click": "res://assets/SoundEffects/Click.wav",
 	"jump": "res://assets/SoundEffects/Jump.wav",
-	"keyboard": "res://assets/SoundEffects/Keyboard.wav",
 	"pickup": "res://assets/SoundEffects/Pick_Up_Item.wav",
 }
 
@@ -85,12 +84,6 @@ func play_jump() -> void:
 
 func play_pickup() -> void:
 	play_sfx("pickup")
-
-
-## Unused for now: nothing in the game takes typed text yet. Kept so the sound is
-## ready the day a text field is added.
-func play_keyboard() -> void:
-	play_sfx("keyboard")
 
 
 ## The next free player, so a new sound does not cut off one still playing. When

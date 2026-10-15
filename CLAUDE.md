@@ -72,7 +72,7 @@ parallel. New test harnesses go in `tests/`.
 | `PauseMenu` is one instanced node per level scene, with `season` set on it | No level `.gd` changes; each level picks its own theme |
 | Pause button has `focus_mode = None` | Space/Enter are jump keys *and* `ui_accept`, so a focusable Pause button would be pressed by jumping |
 | Always set `get_tree().paused = false` before `reload_current_scene()` / `change_scene_to_file()` | `paused` belongs to the tree and survives a scene change |
-| Volume sliders drive `Music` / `SFX` buses created in code | There is no audio yet; sounds added later only need the right bus |
+| Volume sliders drive `Music` / `SFX` buses created in code | `AudioManager` (the only autoload) plays click / jump / pick-up on the `SFX` bus; these sliders control them |
 | Settings left out: slower icicles, shape patterns | The team asked for volume, text size and fullscreen only |
 | Both levels of a season = one script, `stage` 1/2 set on the scene; the new layout lives in `STAGE_2_*` (Spring, Summer) or `STAGE_1_*` (Autumn, Winter) tables | One script per season (PROGRESS §10); the original tables are untouched, so the old suites still describe the original levels |
 | File name and `stage` mean play order (`AutumnLevel.tscn` = Autumn 1, short) | Short first, long second; every arrival flag and `NEXT_SCENE` kept its meaning through the reorder |
@@ -127,7 +127,8 @@ parallel. New test harnesses go in `tests/`.
 ## The proposal vs the game
 The proposal promises more than is built. Built since: the story intro and an
 ending recap (with the SDG facts). Still missing: in-game HUD (season badge + checklist),
-hint key (H), season-clear SDG fact screens *between* seasons, audio, and mouse
+hint key (H), season-clear SDG fact screens *between* seasons, remaining audio (music,
+placement / completion / icicle sounds — only click, jump and pick-up exist), and mouse
 click-to-move. Mechanics also differ: the game is 2-player co-op
 (the proposal reads as a leader with a following group), each season has two levels,
 Autumn has 4 + 3 leaves and frames (the proposal has two rounds of baskets), Summer has

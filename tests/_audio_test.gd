@@ -1,6 +1,6 @@
 extends Node
 
-## Automated checks for the AudioManager autoload and its four sound effects.
+## Automated checks for the AudioManager autoload and its three sound effects.
 ##
 ## Run headless:
 ##   godot --headless --path <project> --scene res://tests/_audio_test.tscn
@@ -10,7 +10,7 @@ extends Node
 ## reaches the right stream, that a fresh button is given its click, and that the
 ## Sound slider at zero really silences the bus.
 
-const SOUND_NAMES := ["click", "jump", "keyboard", "pickup"]
+const SOUND_NAMES := ["click", "jump", "pickup"]
 
 var failures: Array[String] = []
 var audio: Node
@@ -42,7 +42,7 @@ func _test_autoload_and_streams() -> void:
 	for sound_name in SOUND_NAMES:
 		var stream = audio._streams.get(sound_name, null)
 		_check("the '%s' sound loaded" % sound_name, stream is AudioStream)
-	_check("all four sounds are loaded", audio._streams.size() == SOUND_NAMES.size(),
+	_check("all three sounds are loaded", audio._streams.size() == SOUND_NAMES.size(),
 		" loaded=%d" % audio._streams.size())
 
 
@@ -79,7 +79,6 @@ func _test_each_play_reaches_its_stream() -> void:
 	_check("play_click() plays the click sound", _routed("click", audio.play_click))
 	_check("play_jump() plays the jump sound", _routed("jump", audio.play_jump))
 	_check("play_pickup() plays the pick-up sound", _routed("pickup", audio.play_pickup))
-	_check("play_keyboard() plays the keyboard sound", _routed("keyboard", audio.play_keyboard))
 	_check("an unknown sound name only warns, it does not crash", _unknown_is_safe())
 
 
