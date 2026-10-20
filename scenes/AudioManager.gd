@@ -18,11 +18,15 @@ const SOUND_PATHS := {
 	"pickup": "res://assets/SoundEffects/Pick_Up_Item.wav",
 }
 
+## Background music.
+const MUSIC_PATH := "res://assets/SoundEffects/Background Music.wav"
+
 ## How many sounds may overlap before the oldest player is borrowed again.
 const POOL_SIZE := 8
 
 var _streams := {}
 var _players: Array[AudioStreamPlayer] = []
+var _music_player: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -31,6 +35,7 @@ func _ready() -> void:
 	GameSettings.ensure_loaded()
 	GameSettings.apply_audio()
 	_load_sounds()
+	_setup_music()
 
 	# The pool and this node keep working while the tree is paused; otherwise the
 	# click on Resume would be swallowed by the pause it is meant to end.
@@ -61,6 +66,35 @@ func _load_sounds() -> void:
 			push_warning("AudioManager: '%s' is not an audio stream (%s)" % [sound_name, path])
 			continue
 		_streams[sound_name] = stream
+
+
+func _setup_music() -> void:
+	_music_player = AudioStreamPlayer.new()
+	_music_player.bus = GameSettings.MUSIC_BUS
+	_music_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_music_player)
+	if ResourceLoader.exists(MUSIC_PATH):
+		var stream := load(MUSIC_PATH) as AudioStream
+		if stream != null:
+			_music_player.stream = stream
+			_music_player.play()
+		else:
+			push_warning("AudioManager: background music is not an audio stream (%s)" % MUSIC_PATH)
+	else:
+		push_warning("AudioManager: background music is missing (%s)" % MUSIC_PATH)
+
+
+## Restart the background music from the beginning.
+func reset_music() -> void:
+	if _music_player == null:
+		return
+	if _music_player.stream == null and ResourceLoader.exists(MUSIC_PATH):
+		var stream := load(MUSIC_PATH) as AudioStream
+		if stream != null:
+			_music_player.stream = stream
+	_music_player.stop()
+	if _music_player.stream != null:
+		_music_player.play()
 
 
 ## Plays one sound by name. An unknown name does nothing but warn.

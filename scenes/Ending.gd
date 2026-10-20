@@ -93,6 +93,9 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").reset_music()
+
 	GameSettings.ensure_loaded()
 	GameSettings.apply_audio()
 	GameSettings.apply_fullscreen()
@@ -214,6 +217,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_play_again_pressed() -> void:
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").reset_music()
 	get_tree().change_scene_to_file(PLAY_AGAIN_SCENE)
 
 

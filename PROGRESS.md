@@ -1,6 +1,6 @@
 # PROGRESS — FourSeasons
 
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-20
 **Project root:** `C:\Users\Chloe Cheng\OneDrive\Documents\FourSeasons`
 **Engine:** Godot 4.7.2 stable (`4.7`, GL Compatibility renderer)
 
@@ -1174,9 +1174,10 @@ All seven PNGs have `.import` files and are imported by the engine.
 > **space**, and note the **capital T** in `Ice tile`. Easy to mistype, and a wrong
 > path fails to load rather than falling back.
 
-No background/sky art yet. The game's font is the bundled PixelifySans, and three
-sound effects now live in `assets/SoundEffects/` (see §9, 2026-10-15 (later) and
-2026-10-15 (latest)).
+No background/sky art yet. The game's font is the bundled PixelifySans, and
+`assets/SoundEffects/` holds three sound effects plus the 487 MiB
+`Background Music.wav` that plays from title to ending (see §9, 2026-10-15
+(later), 2026-10-15 (Keyboard.wav deleted) and 2026-10-20 (latest)).
 
 ---
 
@@ -1247,11 +1248,11 @@ sound effects now live in `assets/SoundEffects/` (see §9, 2026-10-15 (later) an
 | `scenes/TitleScreen.gd` | **2026-10-14 (late): each menu button has two little seasonal pictures on its top corners** (`DecorLeft` / `DecorRight` `TextureRect`s, mouse-transparent, refilled from `SeasonTheme.button_decorations()` whenever the season changes); `show_season()` ignores the season already showing. **2026-10-14: the background builders are `static` (`build_season`, `build_four_seasons`, `add_faller`, `move_fallers`), shared with the intro and the ending; Play loads `INTRO_SCENE`.** The title screen. Builds the four season backgrounds from the levels' own pictures and crops (sky colour, three rows of ground tiles, the two animals hopping, and each season's props: pot/soil/seeds, sea + three bins, trees + falling leaves, igloo + icicle + fish + falling snow), crossfades to the next season every `SEASON_TIME` (5s) in level order, and re-themes the menu to match. Play loads `SPRING_SCENE`. Esc closes an open panel. |
 | `scenes/PauseMenu.gd` | Pauses with `get_tree().paused`. Esc steps back one layer at a time (Settings -> confirm -> menu -> play). **Always unpauses before `reload_current_scene()` / `change_scene_to_file()`**, because `paused` belongs to the tree and would survive into the next scene. Applies the saved settings (audio, fullscreen, text size) **only when its level is `get_tree().current_scene`**, so the test suites, which build levels inside a test node, are never affected by a player's saved text size. |
 | `scenes/SettingsMenu.gd` | Shows and edits `GameSettings`. Every change applies and saves at once (no Apply button). `open(season)` dresses it in a season; emits `closed` on Back. |
-| `scenes/AudioManager.gd` | **2026-10-15: the project's only autoload** (`project.godot` `[autoload]`, `AudioManager="*res://scenes/AudioManager.gd"`). Loads the three `assets/SoundEffects/*.wav` streams at start-up (a missing file is skipped with `push_warning`), keeps an eight-player pool on the `SFX` bus set to `PROCESS_MODE_ALWAYS`, and exposes `play_sfx(name)` plus `play_click()` / `play_jump()` / `play_pickup()`. Connects every `BaseButton.pressed` (via `get_tree().node_added`) to the click. See §9, 2026-10-15 (later) and 2026-10-15 (latest). |
+| `scenes/AudioManager.gd` | **2026-10-15: the project's only autoload** (`project.godot` `[autoload]`, `AudioManager="*res://scenes/AudioManager.gd"`). Loads the three `assets/SoundEffects/*.wav` streams at start-up (a missing file is skipped with `push_warning`), keeps an eight-player pool on the `SFX` bus set to `PROCESS_MODE_ALWAYS`, and exposes `play_sfx(name)` plus `play_click()` / `play_jump()` / `play_pickup()`. Connects every `BaseButton.pressed` (via `get_tree().node_added`) to the click. **2026-10-20: also holds the background music** - one persistent `AudioStreamPlayer` on the `Music` bus playing `Background Music.wav` across all scene changes, restarted by `reset_music()` on Play, Play again and Winter 2 -> Ending. See §9, 2026-10-15 (later), 2026-10-15 (Keyboard.wav deleted) and 2026-10-20 (latest). |
 | `scenes/GameSettings.gd` | `class_name GameSettings`, **static vars, not an autoload**: `music_volume`, `sound_volume`, `text_scale` (0.8..1.5), `fullscreen`, saved to `user://settings.cfg` with `ConfigFile`. `apply_audio()` creates `Music` and `SFX` buses on first use (every sound effect sits on the `SFX` bus, so these sliders control them; `AudioManager` calls this at start-up). `apply_text_scale(root)` resizes every Label/Button under a node from its designed size, kept in node meta so it never compounds. `save_path` is a var so tests can redirect it. |
 | `scenes/SeasonTheme.gd` | **2026-10-14: every box wears its season.** Per-season `DARK` (borders and all text), `BUTTON` (button fill instead of white) and `FOCUS` (keyboard ring) colours; buttons have a thicker bottom edge that squashes when pressed; **panels are pixel-art frames** (`panel_box()` / `frame_texture()`) drawn from the 24x24 text picture `FRAME` plus each season's `DECORATIONS` (flowers + tulips, sun + waves, maple leaves, snow cap + icicles), scaled `PIXEL_SCALE` (5) times. The outer `FRAME_OUTSIDE` (4) art pixels are see-through and drawn outside the box (`expand_margin`), so decorations overhang it; the middle 4 art pixels repeat, so a decoration must stay in the corners unless it repeats every 4 (see the comment above `FRAME`). `class_name SeasonTheme`, static only. The four season colours (from the proposal's screen-flow figure), panel tints, skies, names, and `make_theme(season)`, which builds a whole `Theme` (buttons, panels, sliders with a drawn round knob, check boxes, labels) plus the `PrimaryButton`, `TitleLabel`, `HeadingLabel` and `SeasonBadge` variations. |
 | `tests/_menus_test.gd` | Automated suite (**255 checks** since 2026-10-14, when the pause menu checks were extended to all eight levels and Play to the intro) for the title, the settings and the pause menu. Uses its own settings file, never the player's. See §9, 2026-10-08. |
-| `tests/_audio_test.gd` | Automated suite (**19 checks**) for the audio: the autoload exists, all three streams load, the pool is on the `SFX` bus and outlives a pause, each `play_*` helper reaches its own stream, a new Button/TextureButton is given the click while a slider is not, and Sound volume 0 mutes the bus. See §9, 2026-10-15 (later) and 2026-10-15 (latest). |
+| `tests/_audio_test.gd` | Automated suite (**19 checks**) for the audio: the autoload exists, all three streams load, the pool is on the `SFX` bus and outlives a pause, each `play_*` helper reaches its own stream, a new Button/TextureButton is given the click while a slider is not, and Sound volume 0 mutes the bus. See §9, 2026-10-15 (later) and 2026-10-15 (Keyboard.wav deleted). |
 | `scenes/StoryIntro.gd` | `class_name StoryIntro`. Five `PAGES` (text, picture, season colours). Pictures come from `TitleScreen.build_season` / `build_four_seasons`; the "year has stopped" page is the four seasons tinted grey. Next turns the page, Let's go! / Skip / Esc call `start_game()` (loads `Level.tscn`). A page turned mid-fade kills the running fade first, so a late callback can never hide the current picture. |
 | `scenes/Ending.gd` | `class_name Ending`. A recap of four beats (`BEAT_TIME` 5.5s), one per season from `RECAP` (achievement, SDG fact, goal), then `show_finale()`: four season columns, confetti in the season colours, Congratulations!, Play again (`Level.tscn`) and Back to title. Enter / Esc / a click skips to the finale. |
 | `tests/_new_levels_test.gd` | Automated suite (**136 checks**, an Enter-key section + 4 levels) for the four new levels (Spring 2, Summer 2, Autumn 1, Winter 1): Enter is the `next_level` key and does nothing during play, the stage and its `STAGE_n_*` layout and width, walls, floor, camera scrolls (long) or stays still (short), UI layer for the long levels, **every collectable really taken by its intended route and really not from the place its comment says is out of reach**, wrong targets refused, finishing only after the last item, and each level's next scene. |
@@ -1844,11 +1845,23 @@ These cost real time during the fix and will mislead anyone testing again:
 
 ## 8. Current Task / Next Task
 
-**2026-10-15 (latest) - `Keyboard.wav` deleted.** The unused keyboard sound was
+**2026-10-20 (latest) - background music is in, and nobody has heard it.**
+`Background Music.wav` plays from title to ending, follows the Music slider, and
+restarts on Play, Play again and Winter 2 -> Ending (§9, 2026-10-20 (latest)).
+The audio suite had to be fixed to stop counting the music player as a pool
+member; it is green again at 19 checks, and the menus, story/ending and
+Winter 2 -> Ending chain runs all pass. **Still open by hand:** listen to the
+track - does it start with the title, carry through level changes without
+restarting, follow the Music slider (0 = silence), restart when a run begins, and
+stay audible over the sound effects? It does **not** loop
+(`edit/loop_mode=0`), so decide whether it should. And the file is 487 MiB in
+git; if the team wants a shorter or looping replacement, ask first.
+
+**2026-10-15 - `Keyboard.wav` deleted.** The unused keyboard sound was
 removed at the team's request, so `assets/SoundEffects/` now holds `Click.wav`,
 `Jump.wav` and `Pick_Up_Item.wav` only. `SOUND_PATHS` and `play_keyboard()` are
 gone from `AudioManager`, and the audio suite is down to 19 checks (it no longer
-expects a keyboard stream). See §9, 2026-10-15 (latest).
+expects a keyboard stream). See §9, 2026-10-15 (Keyboard.wav deleted).
 
 **2026-10-15 - DONE: the four sound files that arrived with this session were wired
 in.** `assets/SoundEffects/` held `Click.wav`, `Jump.wav`, `Pick_Up_Item.wav`
@@ -1957,7 +1970,62 @@ human.
 
 ## 9. Completed Work
 
-### 2026-10-15 (latest) - The unused Keyboard.wav is deleted
+### 2026-10-20 (latest) - Background music plays through the whole game
+
+**The task.** The team added one track, `assets/SoundEffects/Background Music.wav`,
+and asked for it to play as background music from the moment the game starts,
+carry on through every scene change without restarting at each transition, follow
+the existing Music slider, and start again from the beginning when a run starts
+(Play / Play again) and when the game reaches the ending.
+
+**What was done - one autoload grows one more player.**
+
+- `assets/SoundEffects/Background Music.wav` and its `.wav.import` were added.
+  **Watch the size: 510,955,808 bytes (~487 MiB)** - by far the largest file in
+  the repository, and git keeps every version of it forever. If the team ever
+  replaces it, a shorter or looping track would be kinder; ask before changing it.
+- `scenes/AudioManager.gd` (the existing autoload, still the only one) grew
+  `_setup_music()`: one persistent `AudioStreamPlayer`, added as a child in
+  `_ready()`, set to the `Music` bus with `PROCESS_MODE_ALWAYS`, then loaded and
+  started. It is deliberately **not** part of the eight-player SFX pool, so
+  `play_sfx()` never touches it. Because the manager is an autoload, the track
+  keeps playing through every `change_scene_to_file()`, and it keeps playing while
+  the game is paused.
+- `reset_music()` (same script) stops and starts the track from 0, loading the
+  stream first if it is somehow missing. It is called from exactly four places:
+  `TitleScreen._on_play_pressed()` (Play), `Ending._on_play_again_pressed()`,
+  `Ending._ready()` and `WinterLevel._on_next_level_pressed()` on Winter 2, the
+  leg into the Ending. Every other transition (Spring 1 -> Spring 2, Summer 1 ->
+  Summer 2, and so on) leaves the track where it is.
+- **The Music slider needed no new code.** It already writes
+  `GameSettings.music_volume` and `GameSettings.apply_audio()` sets the `Music`
+  bus volume; the new player only had to join that bus. Nothing else changed: no
+  gameplay, layout, SFX, settings or other assets, and no second audio manager.
+
+**The audio suite was failing, and why.** `tests/_audio_test` collected the pool
+by scanning every `AudioStreamPlayer` child of `AudioManager`, and the music
+player is a child too: "the pool has players" counted 9 where the pool is 8, and
+"every player plays through the SFX bus" found one sitting on `Music`. Both
+checks now read `AudioManager._players` - the pool itself - instead of the child
+list, with a comment saying why. The suite is back to **19 checks, ALL CHECKS
+PASSED**. The music player has no suite of its own yet; it is covered only by the
+smoke runs below.
+
+**Tested.** `tests/_audio_test`, `tests/_menus_test` and
+`tests/_story_ending_test -- --spring-check` all print `ALL CHECKS PASSED`, and
+the chain leg `tests/_season_chain_test -- --ending-check` prints
+`NEXT LEVEL REACHED ENDING`, so the changed scenes (Title, Ending, Winter 2) still
+chain correctly. **Nobody has listened to it yet** - a headless run proves the
+stream loads and `play()` is called, not that it sounds right. By hand: does the
+track start with the title, carry through level changes without restarting,
+follow the Music slider (0 = silence), restart on Play and Play again, and stay
+audible over the click / jump / pick-up effects?
+
+**Also worth checking:** the track's import has `edit/loop_mode=0`, so it does
+**not** loop - when it runs out, the game goes quiet until the next
+`reset_music()`. Whether it should loop is a team decision.
+
+### 2026-10-15 - The unused Keyboard.wav is deleted
 
 **The task.** The team asked whether `Keyboard.wav` could be removed. It was the one
 sound asset with no event attached - loaded by `AudioManager` but never played,
@@ -3640,3 +3708,4 @@ x=232 (art out to x=264) and the lowest sand platform covers x=320..512, which i
 exactly the band a ground-standing bin would be drawn into. The ground a bin can
 use starts at x≈560. If the dogs' spawns or the platforms move, the bins can move
 left again.
+

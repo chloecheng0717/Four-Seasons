@@ -881,6 +881,8 @@ func _on_next_level_pressed() -> void:
 	if stage == 1:
 		get_tree().change_scene_to_file(STAGE_2_SCENE)
 	else:
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").reset_music()
 		get_tree().change_scene_to_file(NEXT_SCENE)
 
 

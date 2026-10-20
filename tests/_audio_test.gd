@@ -53,10 +53,9 @@ func _test_pool() -> void:
 	_emit("=== 2. every sound player is on the SFX bus and outlives a pause ===")
 	if audio == null:
 		return
-	var players: Array[AudioStreamPlayer] = []
-	for child in audio.get_children():
-		if child is AudioStreamPlayer:
-			players.append(child)
+	# The pool is _players. AudioManager also holds one music player as a child,
+	# and that one belongs to the Music bus, not the SFX pool.
+	var players: Array[AudioStreamPlayer] = audio._players
 	_check("the pool has players", players.size() == audio.POOL_SIZE, " count=%d" % players.size())
 	var all_on_sfx := true
 	var all_always := true

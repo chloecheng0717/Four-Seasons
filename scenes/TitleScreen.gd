@@ -232,6 +232,8 @@ func _update_button_decorations() -> void:
 # --- Buttons ---------------------------------------------------------------
 
 func _on_play_pressed() -> void:
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").reset_music()
 	get_tree().change_scene_to_file(INTRO_SCENE)
 
 
